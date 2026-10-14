@@ -42,6 +42,8 @@ shortcuts = {
     'fr': 'chess960',
     'cra': 'crazyhouse',
     'zh': 'crazyhouse',
+    'bug': 'bughouse',
+    'bh': 'bughouse',
     # seeks only
     'm': 'manual',
     'f': 'formula',

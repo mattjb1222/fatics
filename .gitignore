@@ -30,6 +30,10 @@ nosetests.xml
 # Translations
 *.mo
 
+# Chess server
+chessd.log
+chessd.pid
+
 # Mr Developer
 .mr.developer.cfg
 .project

@@ -28,6 +28,9 @@ from online import online
 
 @ics_command('match', 'wt', admin.Level.user)
 class Match(Command):
+    def usage(self, conn):
+        conn.write(_('Usage: match <name> [<time> [<inc>]] [unrated] [white|black] [chess|crazyhouse|zh|chess960|fr|bughouse|bug] [fischer|bronstein|hourglass|overtime|untimed]\n'))
+
     def run(self, args, conn):
         if conn.user.session.game:
             if conn.user.session.game.gtype == game.EXAMINED:

@@ -500,6 +500,15 @@ class PlayedGame(Game):
                 mv.time = 0.0 # XXX
                 self.variant.do_move(mv)
 
+        # bughouse is a special case: the clock starts immediately,
+        # rather than waiting for moves to be made (see next_move)
+        if self.speed_variant.variant.name == 'bughouse':
+            if self.clock.is_ticking:
+                # can't happen right now, but don't lose track of a
+                # ticking clock
+                self.clock.stop()
+            self.clock.start(self.variant.get_turn())
+
         assert(self.white.session.game is None)
         assert(self.black.session.game is None)
         self.white.session.game = self
@@ -701,7 +710,10 @@ class PlayedGame(Game):
             o.decline()
 
         time = 0.0
-        if self.is_active and self.variant.pos.ply > 1:
+        # a bughouse clock starts immediately (see __init__), so it must
+        # be handled from the very first move
+        is_bughouse = self.variant.name == 'bughouse'
+        if self.is_active and (self.variant.pos.ply > 1 or is_bughouse):
             moved_side = opp(self.variant.get_turn())
             if self.clock.is_ticking:
                 if conn.user.has_timeseal():
@@ -729,6 +741,13 @@ class PlayedGame(Game):
         if p.has_timeseal():
             p.session.ping(for_move=True)
         super(PlayedGame, self).next_move(mv, conn)
+
+        if self.bug_link is not None and self.bug_link.is_active:
+            # a capture (or a drop back to the opponent's holding) may
+            # have changed the linked board's holding, so send its
+            # players an updated board right away instead of waiting
+            # for their next move
+            self.bug_link.send_boards()
 
         if self.variant.name == "bughouse":
             # bughouse is a special case because a checkmate or stalemate
