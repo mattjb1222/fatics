@@ -721,6 +721,8 @@ class Position(object):
 
 
     def get_last_move(self):
+        if self.ply <= 0:
+            return None
         return self.history.get_move(self.ply - 1)
 
     def _any_legal_moves(self):

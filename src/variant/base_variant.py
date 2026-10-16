@@ -36,6 +36,12 @@ class BaseVariant(object):
             side = opp(side)
 
         s = []
+        # bughouse holdings are held by the *partner* and are not recorded
+        # in the movetext, so they can't be reliably reconstructed when
+        # examining; only show them for crazyhouse, or for bughouse when
+        # actually played (where the live position tracks them).
+        show_holding = (self.name == 'crazyhouse' or
+            (self.name == 'bughouse' and self.game.gtype != EXAMINED))
         s.append('\nGame %d: ' % self.game.number)
         s.append(self.game.info_str + '\n')
 
@@ -46,7 +52,7 @@ class BaseVariant(object):
 
         full_moves = self.pos.ply // 2 + 1
 
-        if self.name in ['crazyhouse', 'bughouse']:
+        if show_holding:
             (holding_white, holding_black) = self.pos.get_holding_str()
             if side == WHITE:
                 s.append('Black holding: [%s]\n' % holding_black)
@@ -71,7 +77,8 @@ class BaseVariant(object):
             elif r == 1:
                 last_mv = self.pos.get_last_move()
                 if last_mv is not None:
-                    last_move_time_str = time_format.hms(last_mv.time, user)
+                    last_move_time_str = time_format.hms(
+                        last_mv.time if last_mv.time is not None else 0.0, user)
                     side_str = 'Black' if self.pos.wtm else 'White'
                     s.append("     %s Moves : '%-7s (%s)'" % (side_str,
                         last_mv.to_san(), last_move_time_str))
@@ -101,7 +108,7 @@ class BaseVariant(object):
             s.append('         a   b   c   d   e   f   g   h\n')
         else:
             s.append('         h   g   f   e   d   c   b   a\n')
-        if self.name in ['crazyhouse', 'bughouse']:
+        if show_holding:
             if side == WHITE:
                 s.append('White holding: [%s]\n' % holding_white)
             else:
@@ -133,8 +140,8 @@ class BaseVariant(object):
                 relation = -3
             white_clock = 0
             black_clock = 0
-            white_name = list(self.game.players)[0].name
-            black_name = list(self.game.players)[0].name
+            white_name = self.game.white_name
+            black_name = self.game.black_name
             clock_is_ticking = 0
         elif self.game.gtype == PLAYED:
             if self.game.white == user:
@@ -168,11 +175,12 @@ class BaseVariant(object):
             last_move_verbose = 'none'
             last_move_lag = 0
         else:
-            assert(last_mv.time is not None)
-            last_move_time_str = time_format.hms(last_mv.time, user)
+            # examined (or undone) moves may not have a recorded time/lag
+            last_move_time_str = time_format.hms(
+                last_mv.time if last_mv.time is not None else 0.0, user)
             last_move_san = last_mv.to_san()
             last_move_verbose = last_mv.to_verbose_alg()
-            last_move_lag = last_mv.lag
+            last_move_lag = last_mv.lag if last_mv.lag is not None else 0
 
         # board_str begins with a space
         s = '\n<12>%s %s %d %d %d %d %d %d %d %s %s %d %d %d %d %d %d %d %d %s (%s) %s %d %d %d\n' % (
@@ -184,7 +192,9 @@ class BaseVariant(object):
             last_move_time_str, last_move_san, flip,
             clock_is_ticking, last_move_lag)
 
-        if self.name in ['crazyhouse', 'bughouse']:
+        show_holding = (self.name == 'crazyhouse' or
+            (self.name == 'bughouse' and self.game.gtype != EXAMINED))
+        if show_holding:
             # print additional <b1> lines
             # print an extra line for captures
             if last_mv and last_mv.is_capture:

@@ -797,6 +797,8 @@ class Position(object):
         assert(wmat == self.material[1])
 
     def get_last_move(self):
+        if self.ply <= 0:
+            return None
         return self.history.get_move(self.ply - 1)
 
     def detect_check(self):

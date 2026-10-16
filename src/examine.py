@@ -68,6 +68,7 @@ class ExaminedGame(Game):
             self.moves = hist_game['movetext'].split(' ')
             self.white_name = hist_game['white_name']
             self.black_name = hist_game['black_name']
+            self.info_str = '%s %s' % (self.white_name, self.black_name)
             self.result_code = hist_game['result']
             self.result_reason = hist_game['result_reason']
 
@@ -146,6 +147,7 @@ class ExaminedGame(Game):
         if self.variant.pos.ply <= 0:
             conn.write(_("You're at the beginning of the game.\n"))
             return
+        n = min(n, self.variant.pos.ply)
         for p in self.players | self.observers:
             p.nwrite_('Game %d: %s backs up %d move.\n',
                 'Game %d: %s backs up %d moves.\n', n,
