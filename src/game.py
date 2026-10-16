@@ -239,7 +239,8 @@ class Game(object):
             return self.black
 
     def observe(self, u):
-        assert(u not in self.observers)
+        if u in self.observers:
+            return
         u.session.observed.add(self)
         self.observers.add(u)
         u.write(_('You are now observing game %d.\n') % self.number)
@@ -454,9 +455,17 @@ class PlayedGame(Game):
         self.rated_str = 'rated' if self.rated else 'unrated'
 
         # GuestBEZD (++++) admin (1000) unrated blitz 2 12
+        # Only one word is given in this position: the speed name
+        # for normal games, or the variant name for variant games
+        # (clients like icsdroneng can't parse "blitz crazyhouse"
+        # as two words here; speed is derivable from min/inc).
+        if self.speed_variant.variant.name == 'chess':
+            game_type_str = self.speed_variant.speed.name
+        else:
+            game_type_str = self.speed_variant.variant.name
         self.info_str = '%s (%s) %s (%s) %s %s %d %d' % (
             self.white_name, self.white_rating, self.black_name,
-            self.black_rating, self.rated_str, self.speed_variant,
+            self.black_rating, self.rated_str, game_type_str,
             self.white_time, self.inc)
         # it seems original FICS uses "creating" here even for
         # adjourned games
@@ -702,6 +711,20 @@ class PlayedGame(Game):
         assert(char in ['W', 'B'])
         return WHITE if char == 'W' else BLACK
 
+    def send_holding(self):
+        """Send the holding (pieces available to drop) of this board to
+        this board's players.  In bughouse, a player can only drop pieces
+        that their partner captured, so the player needs to be told the
+        current holding of the board they are playing on."""
+        if self.variant.name != 'bughouse':
+            return
+        if not self.is_active:
+            return
+        (holding_white, holding_black) = self.variant.pos.get_holding_str()
+        line = 'holding [%s] [%s]\n' % (holding_white, holding_black)
+        for p in self.players:
+            p.write_nowrap(line)
+
     def next_move(self, mv, conn):
         # decline all offers to the player who just moved
         u = self.get_user_to_move()
@@ -748,6 +771,12 @@ class PlayedGame(Game):
             # players an updated board right away instead of waiting
             # for their next move
             self.bug_link.send_boards()
+            # a capture on this board changes the linked board's holding,
+            # and a drop on either board changes that board's own holding.
+            # Send both boards' holdings to keep the players (and their
+            # engines) up to date.
+            self.bug_link.send_holding()
+            self.send_holding()
 
         if self.variant.name == "bughouse":
             # bughouse is a special case because a checkmate or stalemate

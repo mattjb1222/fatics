@@ -33,6 +33,7 @@ nosetests.xml
 # Chess server
 chessd.log
 chessd.pid
+twistd.log
 
 # Mr Developer
 .mr.developer.cfg

@@ -28,14 +28,44 @@ class Timeseal(object):
     _zipseal_pat = re.compile(r'''^([0-9a-f]+): (.*)\n$''')
     zipseal_in = 0
     zipseal_out = 0
+    _cmds = {
+        'timeseal': ['timeseal/openseal_decoder'],
+        'zipseal_decoder': ['timeseal/zipseal_decoder'],
+        'zipseal_encoder': ['timeseal/zipseal_encoder'],
+    }
     def __init__(self):
-        self.timeseal = subprocess.Popen(['timeseal/openseal_decoder'], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-        self.zipseal_decoder = subprocess.Popen(['timeseal/zipseal_decoder'], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
-        self.zipseal_encoder = subprocess.Popen(['timeseal/zipseal_encoder'], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+        self.timeseal = self._spawn('timeseal')
+        self.zipseal_decoder = self._spawn('zipseal_decoder')
+        self.zipseal_encoder = self._spawn('zipseal_encoder')
+
+    def _spawn(self, name):
+        try:
+            return subprocess.Popen(self._cmds[name], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
+        except Exception as e:
+            print('timeseal: failed to spawn %s: %s' % (name, e))
+            return None
+
+    def _ensure(self, name):
+        """Return the live Popen for name, respawning it if it died."""
+        p = getattr(self, name)
+        if p is not None and p.poll() is None:
+            return p
+        print('timeseal: respawning %s' % name)
+        p = self._spawn(name)
+        setattr(self, name, p)
+        return p
 
     def decode_timeseal(self, line):
-        self.timeseal.stdin.write(line + '\n')
-        dec = self.timeseal.stdout.readline()
+        p = self._ensure('timeseal')
+        if p is None:
+            return (0, line)
+        try:
+            p.stdin.write(line + '\n')
+            dec = p.stdout.readline()
+        except (IOError, OSError):
+            # process died mid-use; it will be respawned next time.
+            # Treat this line as not timeseal-encoded.
+            return (0, line)
         m = self._timeseal_pat.match(dec)
         if not m:
             print('timeseal failed to match: {{%r}}' % dec)
@@ -43,8 +73,14 @@ class Timeseal(object):
         return (int(m.group(1), 10), m.group(2))
 
     def decode_zipseal(self, line):
-        self.zipseal_decoder.stdin.write(line + '\n')
-        dec = self.zipseal_decoder.stdout.readline()
+        p = self._ensure('zipseal_decoder')
+        if p is None:
+            return (0, line)
+        try:
+            p.stdin.write(line + '\n')
+            dec = p.stdout.readline()
+        except (IOError, OSError):
+            return (0, line)
         m = self._zipseal_pat.match(dec)
         if not m or int(m.group(1), 16) == 0:
             print('zipseal failed to match: {{%r}}' % dec)
@@ -52,12 +88,15 @@ class Timeseal(object):
         return (int(m.group(1), 16), m.group(2))
 
     def compress_zipseal(self, line):
+        p = self._ensure('zipseal_encoder')
+        if p is None:
+            return None
         try:
             line = line[0:1023] # XXX
-            self.zipseal_encoder.stdin.write('%04x%s' % (len(line),line))
-            count_str = self.zipseal_encoder.stdout.read(4)
+            p.stdin.write('%04x%s' % (len(line),line))
+            count_str = p.stdout.read(4)
             count = int(count_str, 16)
-            ret = self.zipseal_encoder.stdout.read(count)
+            ret = p.stdout.read(count)
         except IOError:
             ret = None
         else:

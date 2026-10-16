@@ -19,6 +19,20 @@
 
 from command import *
 
+def pick_offer(offers, arg, who):
+    """Select an offer by 1-based index ("accept n") or by the
+    other player's name ("accept <name>", as sent by clients such
+    as icsdroneng). 'who' is 'a' for received offers, 'b' for sent."""
+    if arg.isdigit():
+        i = int(arg)
+        if 1 <= i <= len(offers):
+            return offers[i - 1]
+        return None
+    for of in offers:
+        if getattr(of, who).name.lower() == arg.lower():
+            return of
+    return None
+
 @ics_command('accept', 'n', admin.Level.user)
 class Accept(Command):
     def run(self, args, conn):
@@ -32,7 +46,11 @@ class Accept(Command):
                 return
             conn.user.session.offers_received[0].accept()
         else:
-            conn.write('TODO: ACCEPT PARAM\n')
+            o = pick_offer(conn.user.session.offers_received, args[0], 'a')
+            if o is None:
+                conn.write(_('No offer from %s to accept.\n', (args[0],)))
+                return
+            o.accept()
 
 @ics_command('decline', 'n', admin.Level.user)
 class Decline(Command):
@@ -46,7 +64,11 @@ class Decline(Command):
                 return
             conn.user.session.offers_received[0].decline()
         else:
-            conn.write('TODO: DECLINE PARAM\n')
+            o = pick_offer(conn.user.session.offers_received, args[0], 'a')
+            if o is None:
+                conn.write(_('No offer from %s to decline.\n', (args[0],)))
+                return
+            o.decline()
 
 @ics_command('withdraw', 'n', admin.Level.user)
 class Withdraw(Command):
@@ -61,6 +83,10 @@ class Withdraw(Command):
                 return
             conn.user.session.offers_sent[0].withdraw()
         else:
-            conn.write('TODO: WITHDRAW PARAM\n')
+            o = pick_offer(conn.user.session.offers_sent, args[0], 'b')
+            if o is None:
+                conn.write(_('No offer to %s to withdraw.\n', (args[0],)))
+                return
+            o.withdraw()
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

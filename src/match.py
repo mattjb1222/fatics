@@ -364,10 +364,18 @@ class Challenge(Offer, MatchStringParser):
         else:
             time_str = ' %d %d' % (self.time, self.inc)
 
-        # example: GuestABCD (++++) [white] hans (----) unrated blitz 5 0.
-        challenge_str = '%s (%s)%s %s (%s) %s %s%s' % (self.a.name,
+        # example: GuestABCD (++++) [white] hans (----) unrated 5 0.
+        # Canonical FICS sends no time-class word in the challenge line
+        # (clients derive speed from min/inc); for variants only the
+        # variant name is given, e.g. "unrated crazyhouse 5 0".
+        if self.speed_variant.variant.name == 'chess':
+            variant_str = ''
+        else:
+            variant_str = ' %s' % self.speed_variant.variant.name
+
+        challenge_str = '%s (%s)%s %s (%s) %s%s%s' % (self.a.name,
             self.a_rating, side_str, self.b.name, self.b_rating, rated_str,
-            self.speed_variant, time_str)
+            variant_str, time_str)
         if self.idn is not None:
             challenge_str = '%s idn=%d' % (challenge_str, self.idn)
         if self.clock_name not in ['fischer', 'untimed']:

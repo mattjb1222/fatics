@@ -137,6 +137,26 @@ class Qtell(Command):
                 ret = 1
         conn.write('*qtell %s %d*\n' % (args[0], ret))
 
+@ics_command('ptell', 'S', admin.Level.user)
+class Ptell(Command, ToldMixin):
+    def run(self, args, conn):
+        if conn.user.is_muted:
+            conn.write(_('You are muted.\n'))
+            return
+        p = conn.user.session.partner
+        if not p:
+            conn.write(_('You have no partner.\n'))
+            return
+        if not p.is_online:
+            conn.write(_('Your partner is not online.\n'))
+            return
+        if conn.user.name in p.censor and not conn.user.is_admin():
+            conn.write(_("%s is censoring you.\n") % p.name)
+            return
+        p.write_('\n%s (your partner) tells you: %s\n',
+            (conn.user.name, args[0]))
+        self._told(p, conn)
+
 @ics_command('say', 'S')
 class Say(Command, ToldMixin):
     def run(self, args, conn):

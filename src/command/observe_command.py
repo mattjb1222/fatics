@@ -22,6 +22,33 @@ from command import ics_command, Command
 import game
 import user
 
+def follow_user(conn, u2):
+    """Follow the given user (see all of their games).  Shared by the
+    'follow <name>' and 'pfollow' commands."""
+    if u2 == conn.user:
+        conn.write(_("You can't follow your own games.\n"))
+        return
+    if conn.user.session.following:
+        if u2 == conn.user.session.following:
+            conn.write(_("You are already following %s's games.\n")
+                % u2.name)
+            return
+        conn.user.write(_("You will no longer be following %s's games.\n")
+            % conn.user.session.following.name)
+        conn.user.session.following.session.followed_by.remove(conn.user)
+        conn.user.session.following = None
+    conn.write(_("You will now be following %s's games.\n")
+        % u2.name)
+    conn.user.session.following = u2
+    u2.session.followed_by.add(conn.user)
+
+    # If there is a game in progress and we are not already
+    # observing it, start observing it.
+    if (u2.session.game and
+            u2.session.game not in conn.user.session.observed):
+        u2.session.game.observe(conn.user)
+        assert(u2.session.game in conn.user.session.observed)
+
 @ics_command('observe', 'i')
 class Observe(Command):
     def run(self, args, conn):
@@ -37,6 +64,24 @@ class Observe(Command):
             else:
                 assert(conn.user not in g.observers)
                 g.observe(conn.user)
+
+@ics_command('pobserve', 'pobs')
+class Pobserve(Command):
+    def run(self, args, conn):
+        g = conn.user.session.game
+        if not g:
+            conn.write(_('You are not playing a game.\n'))
+            return
+        if not g.bug_link:
+            conn.write(_('Your game is not linked to a partner game.\n'))
+            return
+        pgame = g.bug_link
+        if conn.user in pgame.observers:
+            conn.write(_('You are already observing your partner\'s game %d.\n')
+                % pgame.number)
+        else:
+            assert(conn.user not in pgame.players)
+            pgame.observe(conn.user)
 
 @ics_command('follow', 'o')
 class Follow(Command):
@@ -54,28 +99,19 @@ class Follow(Command):
             u2 = user.find_by_prefix_for_user(args[0], conn,
                 online_only=True)
             if u2:
-                if u2 == conn.user:
-                    conn.write(_("You can't follow your own games.\n"))
-                    return
-                if conn.user.session.following:
-                    if u2 == conn.user.session.following:
-                        conn.write(_("You are already following %s's games.\n")
-                            % u2.name)
-                        return
-                    conn.user.write(_("You will no longer be following %s's games.\n") % conn.user.session.following.name)
-                    conn.user.session.following.session.followed_by.remove(conn.user)
-                    conn.user.session.following = None
-                conn.write(_("You will now be following %s's games.\n")
-                    % u2.name)
-                conn.user.session.following = u2
-                u2.session.followed_by.add(conn.user)
+                follow_user(conn, u2)
 
-                # If there is a game in progress and we are not already
-                # observing it, start observing it.
-                if (u2.session.game and
-                        u2.session.game not in conn.user.session.observed):
-                    u2.session.game.observe(conn.user)
-                    assert(u2.session.game in conn.user.session.observed)
+@ics_command('pfollow', '')
+class Pfollow(Command):
+    def run(self, args, conn):
+        u2 = conn.user.session.partner
+        if not u2:
+            conn.write(_('You have no partner.\n'))
+            return
+        if not u2.is_online:
+            conn.write(_('%s is not online.\n') % u2.name)
+            return
+        follow_user(conn, u2)
 
 @ics_command('allobservers', 'o')
 class Allobservers(Command):
