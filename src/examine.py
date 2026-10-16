@@ -88,9 +88,7 @@ class ExaminedGame(Game):
                 (self.number, conn.user.name, n))
         for i in range(0, n):
             san = self.moves[self.variant.pos.ply]
-            mv = self.variant.pos.move_from_castle(san)
-            if not mv:
-                mv = self.variant.pos.move_from_san(san)
+            mv = self.variant.parse_move(san, conn)
             if not mv:
                 print 'internal error: failed to parse move %s' % san
             assert(mv)

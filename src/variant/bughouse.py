@@ -366,6 +366,7 @@ class Position(object):
         # self.holding = {pc: 0 for pc in 'PNBRQpnbrq'} # Python 2.7-ism
         self.holding = {}
         self.bug_link = None
+        self.check_integrity = True
         for pc in 'PNBRQpnbrq':
             self.holding[pc] = 0 # works with Python 2.6
         self.history = PositionHistory()
@@ -690,6 +691,8 @@ class Position(object):
         return False
 
     def compute_hash(self):
+        if not self.check_integrity:
+            return self.hash
         hash = 0
         if self.wtm:
             hash ^= zobrist.side_hash
@@ -782,7 +785,7 @@ class Position(object):
             else:
                 self.promoted[mv.to] = 0
 
-        assert(self.material == mv.undo.material)
+        assert(self.check_integrity or self.material == mv.undo.material)
         self.check_material()
         assert(self.hash == self.compute_hash())
         if self.bug_link:
@@ -790,6 +793,8 @@ class Position(object):
             assert(self.bug_link.hash == self.bug_link.compute_hash())
 
     def check_material(self):
+        if not self.check_integrity:
+            return
         bmat = (sum([piece_material[pc.lower()]
             for (sq, pc) in self if pc != '-' and not piece_is_white(pc)]))
         wmat = sum([piece_material[pc.lower()]
@@ -1356,6 +1361,17 @@ class Bughouse(BaseVariant):
         if game.gtype == PLAYED:
             assert(game.white.session.partner)
             assert(game.black.session.partner)
+        else:
+            # An examined (review) game is single-user: it has no partner
+            # and no linked partner game, so bug_link would stay None and
+            # make_move would crash on any capture/en-passant
+            # (self.bug_link.add_to_holding).  Link the position to itself so
+            # captures and drops can be tracked (and undone) in the single
+            # position, and disable the material/hash integrity assertions
+            # (check_integrity), which assume the two-position layout and
+            # would otherwise fail while replaying the game for review.
+            self.pos.bug_link = self.pos
+            self.pos.check_integrity = False
 
     def parse_move(self, s, conn):
         """Try to parse a move.  If it looks like a move but
