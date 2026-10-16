@@ -29,6 +29,11 @@ class ExaminedGame(Game):
     def __init__(self, user, hist_game=None):
         self.gtype = EXAMINED
         self.players = set([user])
+        # An examined game is reviewed by a single user; give it
+        # white/black so that variants that reference them (e.g. bughouse)
+        # can be instantiated.
+        self.white = user
+        self.black = user
         super(ExaminedGame, self).__init__()
 
         self.white_time = 0

@@ -1350,8 +1350,12 @@ class Bughouse(BaseVariant):
         self.game = game
         self.pos = copy.deepcopy(initial_pos)
         self.name = 'bughouse'
-        assert(game.white.session.partner)
-        assert(game.black.session.partner)
+        # Only real played bughouse games have two players each with a
+        # partner; an examined (review) game is single-user, so skip the
+        # partner check for non-played games (e.g. examine).
+        if game.gtype == PLAYED:
+            assert(game.white.session.partner)
+            assert(game.black.session.partner)
 
     def parse_move(self, s, conn):
         """Try to parse a move.  If it looks like a move but
@@ -1387,6 +1391,9 @@ class Bughouse(BaseVariant):
         self.pos.make_move(mv)
         self.pos.detect_check()
         mv.add_san_decorator()
+
+    def undo_move(self):
+        self.pos.undo_move(self.pos.get_last_move())
 
     def get_turn(self):
         return WHITE if self.pos.wtm else BLACK
