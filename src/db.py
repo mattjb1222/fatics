@@ -751,10 +751,14 @@ class DB(object):
             FROM history AS h LEFT JOIN game USING(game_id)
                 LEFT JOIN game_idn USING (game_id)
             WHERE user_id=%s
-            ORDER BY when_ended ASC
+            ORDER BY when_ended DESC
             LIMIT 10""", (user_id,))
         rows = cursor.fetchall()
         cursor.close()
+        # newest 10, but in oldest->newest order to match the in-session
+        # _history (save_history appends and uses _history[-1] for the next
+        # num)
+        rows = list(reversed(rows))
         return rows
 
     def user_add_history(self, entry, user_id):
