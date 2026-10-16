@@ -85,11 +85,11 @@ class History(object):
         game.white.save_history(game_id, white_result_char,
             white_rating, 'W', game.black.name, black_rating,
             eco[0:3], flags, game.white_time, game.inc, result_reason,
-            game.when_ended, movetext, game.idn)
+            game.when_ended, movetext, move_times, game.idn)
         game.black.save_history(game_id, black_result_char,
             black_rating, 'B', game.white.name, white_rating,
             eco[0:3], flags, game.white_time, game.inc, result_reason,
-            game.when_ended, movetext, game.idn)
+            game.when_ended, movetext, move_times, game.idn)
         return game_id
 
 def show_for_user(user, conn):

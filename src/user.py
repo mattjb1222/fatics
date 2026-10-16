@@ -232,7 +232,7 @@ class BaseUser(object):
 
     def save_history(self, game_id, result_char, user_rating, color_char,
             opp_name, opp_rating, eco, flags, initial_time, inc,
-            result_reason, when_ended, movetext, idn):
+            result_reason, when_ended, movetext, move_times, idn):
         assert(self._history is not None)
         if len(self._history) == 0:
             num = 0
@@ -245,7 +245,7 @@ class BaseUser(object):
             'opp_name': opp_name, 'opp_rating': opp_rating, 'eco': eco,
             'flags' : flags, 'time': initial_time, 'inc' : inc,
             'result_reason': result_reason, 'when_ended': when_ended,
-            'movetext': movetext, 'idn': idn
+            'movetext': movetext, 'move_times': move_times, 'idn': idn
         }
         self._history.append(entry)
         return entry
