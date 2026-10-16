@@ -507,7 +507,8 @@ class Position(object):
 
     def add_to_holding(self, pc, update_hash):
         count = self.holding[pc]
-        assert(0 <= count <= 15)
+        if self.check_integrity:
+            assert(0 <= count <= 15)
         self.holding[pc] += 1
         if update_hash:
             # these things are skipped when undoing a move, since
@@ -519,12 +520,14 @@ class Position(object):
 
     def remove_from_holding(self, pc, update_hash):
         count = self.holding[pc]
-        assert(1 <= count <= 16)
-        self.holding[pc] -= 1
-        if update_hash:
-            self.hash ^= zobrist.holding_hash(pc, count)
-            if count - 1 > 0:
-                self.hash ^= zobrist.holding_hash(pc, count - 1)
+        if self.check_integrity:
+            assert(1 <= count <= 16)
+        if count > 0:
+            self.holding[pc] = count - 1
+            if update_hash:
+                self.hash ^= zobrist.holding_hash(pc, count)
+                if count - 1 > 0:
+                    self.hash ^= zobrist.holding_hash(pc, count - 1)
 
     def make_move(self, mv):
         """make the move"""
@@ -1178,9 +1181,10 @@ class Position(object):
             else:
                 pc = m.group(1).lower()
             to = str_to_sq(m.group(2).lower())
-            assert(0 <= self.holding[pc] <= 16)
-            if self.holding[pc] == 0:
-                raise IllegalMoveError('no such piece in holding')
+            if self.check_integrity:
+                assert(0 <= self.holding[pc] <= 16)
+                if self.holding[pc] == 0:
+                    raise IllegalMoveError('no such piece in holding')
             if self.board[to] != '-':
                 raise IllegalMoveError('square is occupied')
             if pc in ['p', 'P'] and rank(to) in [0, 7]:
