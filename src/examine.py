@@ -99,23 +99,38 @@ class ExaminedGame(Game):
 
     def get_display_clocks(self):
         """ Compute the white/black remaining clock time (seconds) at the
-        current position by tracking each player's last recorded clock
-        time.  A move's recorded time is the mover's remaining clock; the
-        turns alternate with white moving first, so an even move index
-        (from the start) is white's. """
+        current position by replaying each player's clock as moves are
+        examined.  A move's recorded time (mv.time) is the time the mover
+        spent on it, so it is subtracted from the mover's remaining clock;
+        for a timed game the increment is added back after the move, exactly
+        as the live clock does (skipping the first two plies).  The turns
+        alternate with white moving first, so an even move index (from the
+        start) is white's.  Clients (winboard/xboard) derive each move's
+        time by differencing these remaining clocks, so they must be the
+        true remaining times, not the per-move times. """
         initial = (self.white_time * 60.0) if self.white_time else 0.0
         white_clock = initial
         black_clock = initial
+        inc = self.inc or 0
         pos = self.variant.pos
         i = pos.start_ply
         while i < pos.ply:
             mv = pos.history.get_move(i)
             if mv is not None and mv.time is not None:
+                # ply after this move; the live clock adds the increment
+                # (Fischer) after the move, skipping the first two plies
+                add_inc = inc if (i + 1) > 2 else 0
                 if (i - pos.start_ply) % 2 == 0:
-                    white_clock = mv.time
+                    white_clock -= mv.time
+                    white_clock += add_inc
                 else:
-                    black_clock = mv.time
+                    black_clock -= mv.time
+                    black_clock += add_inc
             i += 1
+        if white_clock < 0:
+            white_clock = 0
+        if black_clock < 0:
+            black_clock = 0
         return (int(round(white_clock)), int(round(black_clock)))
 
     def forward(self, n, conn):
@@ -134,6 +149,11 @@ class ExaminedGame(Game):
                 print 'internal error: failed to parse move %s' % san
             assert(mv)
             mv.time = self._get_move_time(self.variant.pos.ply)
+            # carry the recorded per-move time in the lag field too, so
+            # clients that show the move's time from the lag (rather than
+            # by differencing the clocks, which undercounts under an
+            # increment) display the true time spent on the move
+            mv.lag = int(round(mv.time))
             self.variant.do_move(mv)
             if self.variant.pos.ply >= len(self.moves):
                 # end of the game
