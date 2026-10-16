@@ -678,12 +678,12 @@ class DB(object):
     # game
     def game_add(self, white_name, white_rating, black_name, black_rating,
             eco, variant_id, speed_id, time, inc, rated, result, result_reason,
-            ply_count, movetext, when_started, when_ended):
+            ply_count, movetext, move_times, when_started, when_ended):
         cursor = self.db.cursor()
-        cursor = self.query(cursor, """INSERT INTO game SET white_name=%s,white_rating=%s,black_name=%s,black_rating=%s,eco=%s,variant_id=%s,speed_id=%s,time=%s,inc=%s,rated=%s,result=%s,result_reason=%s,ply_count=%s,movetext=%s,when_started=%s,when_ended=%s""", (white_name,
+        cursor = self.query(cursor, """INSERT INTO game SET white_name=%s,white_rating=%s,black_name=%s,black_rating=%s,eco=%s,variant_id=%s,speed_id=%s,time=%s,inc=%s,rated=%s,result=%s,result_reason=%s,ply_count=%s,movetext=%s,move_times=%s,when_started=%s,when_ended=%s""", (white_name,
             white_rating, black_name, black_rating, eco, variant_id,
             speed_id, time, inc, rated, result, result_reason, ply_count,
-            movetext, when_started, when_ended))
+            movetext, move_times, when_started, when_ended))
         game_id = cursor.lastrowid
         cursor.close()
         return game_id
@@ -747,7 +747,7 @@ class DB(object):
         cursor = self.db.cursor(cursors.DictCursor)
         cursor = self.query(cursor, """SELECT game_id, num, result_char, user_rating,
                 color_char, opp_name, opp_rating, h.eco, flags, h.time,
-                h.inc, h.result_reason, h.when_ended, movetext, idn
+                h.inc, h.result_reason, h.when_ended, movetext, move_times, idn
             FROM history AS h LEFT JOIN game USING(game_id)
                 LEFT JOIN game_idn USING (game_id)
             WHERE user_id=%s

@@ -138,8 +138,11 @@ class BaseVariant(object):
                 relation = -2
             else:
                 relation = -3
-            white_clock = 0
-            black_clock = 0
+            if hasattr(self.game, 'get_display_clocks'):
+                white_clock, black_clock = self.game.get_display_clocks()
+            else:
+                white_clock = 0
+                black_clock = 0
             white_name = self.game.white_name
             black_name = self.game.black_name
             clock_is_ticking = 0

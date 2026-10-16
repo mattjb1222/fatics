@@ -58,6 +58,7 @@ class ExaminedGame(Game):
             self.white_name = 'White'
             self.black_name = 'Black'
             self.result_code = None
+            self.move_times = []
         else:
             self.idn = hist_game['idn']
             variant_name = speed_variant.variant_abbrevs[hist_game['flags'][1]].name
@@ -71,12 +72,51 @@ class ExaminedGame(Game):
             self.info_str = '%s %s' % (self.white_name, self.black_name)
             self.result_code = hist_game['result']
             self.result_reason = hist_game['result_reason']
+            self.white_time = hist_game['time']
+            self.inc = hist_game['inc']
+            self.move_times = self._parse_move_times(
+                hist_game.get('move_times'))
 
         for uf in user.session.followed_by:
             uf.write_('\n%s, whom you are following, has started examining a game.\n', user)
             self.observe(uf)
 
         self.send_boards()
+
+    @staticmethod
+    def _parse_move_times(s):
+        if not s:
+            return []
+        try:
+            return [float(x) for x in s.split()]
+        except Exception:
+            return []
+
+    def _get_move_time(self, i):
+        if 0 <= i < len(self.move_times):
+            return self.move_times[i]
+        return 0.0
+
+    def get_display_clocks(self):
+        """ Compute the white/black remaining clock time (seconds) at the
+        current position by tracking each player's last recorded clock
+        time.  A move's recorded time is the mover's remaining clock; the
+        turns alternate with white moving first, so an even move index
+        (from the start) is white's. """
+        initial = (self.white_time * 60.0) if self.white_time else 0.0
+        white_clock = initial
+        black_clock = initial
+        pos = self.variant.pos
+        i = pos.start_ply
+        while i < pos.ply:
+            mv = pos.history.get_move(i)
+            if mv is not None and mv.time is not None:
+                if (i - pos.start_ply) % 2 == 0:
+                    white_clock = mv.time
+                else:
+                    black_clock = mv.time
+            i += 1
+        return (int(round(white_clock)), int(round(black_clock)))
 
     def forward(self, n, conn):
         assert(self.variant.pos.ply <= len(self.moves))
@@ -93,7 +133,7 @@ class ExaminedGame(Game):
             if not mv:
                 print 'internal error: failed to parse move %s' % san
             assert(mv)
-            mv.time = 0.0
+            mv.time = self._get_move_time(self.variant.pos.ply)
             self.variant.do_move(mv)
             if self.variant.pos.ply >= len(self.moves):
                 # end of the game

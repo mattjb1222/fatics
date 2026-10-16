@@ -55,13 +55,14 @@ class History(object):
         white_rating = str(game.white_rating)
         black_rating = str(game.black_rating)
         movetext = game.get_movetext()
+        move_times = game.get_move_times()
 
         (i, eco, longeco) = game.get_eco()
         game_id = db.game_add(game.white.name, white_rating, game.black.name,
             black_rating, eco, game.speed_variant.variant.id_,
             game.speed_variant.speed.id_, game.white_time, game.inc,
             game.rated, result_code, result_reason, game.get_ply_count(),
-            movetext, game.when_started, game.when_ended)
+            movetext, move_times, game.when_started, game.when_ended)
 
         if game.idn is not None:
             db.game_add_idn(game_id, game.idn)

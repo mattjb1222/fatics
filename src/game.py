@@ -307,6 +307,18 @@ class Game(object):
         ret = ' '.join(moves)
         return ret
 
+    def get_move_times(self):
+        """ Return a space-separated list of the remaining clock time (secs)
+        for each move, in the same order as get_movetext().  Each value is
+        the mover's clock at the moment the move was played. """
+        i = self.variant.pos.start_ply
+        times = []
+        while i < self.variant.pos.ply:
+            mv = self.variant.pos.history.get_move(i)
+            times.append('%.1f' % (mv.time if mv.time is not None else 0.0))
+            i += 1
+        return ' '.join(times)
+
     def get_ply_count(self):
         return self.variant.pos.ply - self.variant.pos.start_ply
 

@@ -221,6 +221,7 @@ CREATE TABLE `game` (
      'Res', 'TM', 'PW', 'PDr', 'WLM', 'WNM', 'MBB', '50') NOT NULL,
   `ply_count` SMALLINT NOT NULL,
   `movetext` TEXT,
+  `move_times` MEDIUMTEXT COMMENT 'per-move remaining clock time (secs), one per move',
   `when_started` TIMESTAMP NOT NULL,
   `when_ended` TIMESTAMP NOT NULL,
   INDEX(`white_name`),
