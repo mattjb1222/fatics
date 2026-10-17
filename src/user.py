@@ -574,10 +574,10 @@ class RegUser(BaseUser):
 
     def save_history(self, game_id, result_char, user_rating, color_char,
             opp_name, opp_rating, eco, flags, initial_time, inc,
-            result_reason, when_ended, movetext, idn):
+            result_reason, when_ended, movetext, move_times, idn):
         entry = BaseUser.save_history(self, game_id, result_char, user_rating,
             color_char, opp_name, opp_rating, eco, flags, initial_time, inc,
-            result_reason, when_ended, movetext, idn)
+            result_reason, when_ended, movetext, move_times, idn)
         db.user_add_history(entry, self.id)
 
     def clear_history(self):

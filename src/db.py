@@ -1125,7 +1125,9 @@ class DB(object):
 
     def game_partner_add(self, game_id, partner_game_id):
         cursor = self.db.cursor()
-        cursor = self.query(cursor, """INSERT INTO game_partner VALUES(%s,%s)""",
+        cursor = self.query(cursor,
+            """INSERT INTO game_partner VALUES(%s,%s)
+            ON DUPLICATE KEY UPDATE partner_game_id=partner_game_id""",
             (game_id, partner_game_id))
         cursor.close()
 

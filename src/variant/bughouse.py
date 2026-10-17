@@ -796,6 +796,13 @@ class Position(object):
             assert(self.bug_link.hash == self.bug_link.compute_hash())
 
     def check_material(self):
+        # bughouse keeps captured pieces, so total material (board + holding)
+        # is roughly conserved; use it (like chess.py) for the flag / mating-
+        # material check.  check_flag() also defaults to True if these are
+        # absent, so a slow engine flags as a loss on time rather than the
+        # game crashing.
+        self.black_has_mating_material = self.material[0] > 3
+        self.white_has_mating_material = self.material[1] > 3
         if not self.check_integrity:
             return
         bmat = (sum([piece_material[pc.lower()]

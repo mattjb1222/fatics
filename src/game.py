@@ -850,6 +850,11 @@ class PlayedGame(Game):
             u.write(self.gameinfo_str)
 
     def result(self, msg, result_code):
+        # guard against a double save: if this game already ended (e.g. a
+        # player disconnects *after* their bughouse board was already finished
+        # via the partner board), skip re-saving -- otherwise save_game() runs
+        # twice and game_partner_add() hits a duplicate primary key.
+        was_active = self.is_active
         self.when_ended = datetime.datetime.utcnow()
         line = '\n{Game %d (%s vs. %s) %s} %s\n' % (self.number,
             self.white_name, self.black_name, msg, result_code)
@@ -862,7 +867,7 @@ class PlayedGame(Game):
 
         self.clock.stop()
         self.is_active = False
-        if result_code != '*':
+        if result_code != '*' and was_active:
             history.history.save_game(self, msg, result_code)
             if self.rated:
                 if result_code == '1-0':

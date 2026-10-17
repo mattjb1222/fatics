@@ -104,7 +104,7 @@ class Clock(object):
             if self.get_white_time() <= 0:
                 if self.get_black_time() <= 0:
                     game.result('Both players ran out of time', '1/2-1/2')
-                elif not game.variant.pos.black_has_mating_material:
+                elif not getattr(game.variant.pos, 'black_has_mating_material', True):
                     game.result('%s ran out of time and %s lacks mating material' % (game.white.name, game.black.name), '1/2-1/2')
                 else:
                     game.result('%s forfeits on time' % game.white.name, '0-1')
@@ -113,7 +113,7 @@ class Clock(object):
             if self.get_black_time() <= 0:
                 if self.get_white_time() <= 0:
                     game.result('Both players ran out of time', '1/2-1/2')
-                elif not game.variant.pos.white_has_mating_material:
+                elif not getattr(game.variant.pos, 'white_has_mating_material', True):
                     game.result('%s ran out of time and %s lacks mating material' % (game.black.name, game.white.name), '1/2-1/2')
                 else:
                     game.result('%s forfeits on time' % game.black.name, '1-0')
