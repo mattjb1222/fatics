@@ -566,6 +566,10 @@ class PlayedGame(Game):
         assert(self.black.session.game is None)
         self.white.session.game = self
         self.black.session.game = self
+        # a new game invalidates any timeseal move timestamp left over
+        # from a previous game (see next_move)
+        self.white.session.move_sent_timestamp = None
+        self.black.session.move_sent_timestamp = None
 
         self.white.session.last_opp = self.black
         self.black.session.last_opp = self.white
@@ -784,8 +788,12 @@ class PlayedGame(Game):
         if self.is_active and (self.variant.pos.ply > 1 or is_bughouse):
             moved_side = opp(self.variant.get_turn())
             if self.clock.is_ticking:
-                if conn.user.has_timeseal():
-                    assert(conn.session.move_sent_timestamp is not None)
+                # timeseal: only usable if we have a ping timestamp,
+                # i.e. the previous move was pinged.  A game's first move
+                # has none (the bughouse clock starts immediately, so this
+                # block runs from ply 1); fall back to a plain got_move.
+                if (conn.user.has_timeseal() and
+                        conn.session.move_sent_timestamp is not None):
                     elapsed_ms = (conn.session.timeseal_last_timestamp -
                         conn.session.move_sent_timestamp)
                     time = self.clock.got_move(moved_side,
@@ -927,11 +935,10 @@ class PlayedGame(Game):
             elif result_code == '*':
                 if 'Game adjourned' in msg:
                     self.bug_link.adjourn("Partners' game adjourned")
-                elif 'Game aborted' in msg:
-                    self.bug_link.result("Partners' game aborted", '*')
                 else:
-                    print 'unexpected incomplete game message %s' % msg
-                    assert(False)
+                    # abort, abort-by-disconnection, or any other
+                    # incomplete result: end the partners' board too
+                    self.bug_link.result("Partners' game aborted", '*')
             else:
                 print 'unexpected result code %s' % result_code
                 assert(False)

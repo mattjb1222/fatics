@@ -77,7 +77,10 @@ class BaseUser(object):
             channel.chlist[ch].log_on(self)
 
     def log_off(self):
-        assert(self.is_online)
+        # re-entry safe: a second log_off (e.g. an async connectionLost
+        # after an already-run log_off) must not re-run the cleanup
+        if not self.is_online:
+            return
 
         db.user_log(self.name, login=False, ip=self.session.conn.ip)
 

@@ -70,7 +70,11 @@ class Session(object):
         return time.time() - self.login_time
 
     def close(self):
-        assert(not self.closed)
+        # re-close safe: if a close crashed partway (or the user was
+        # already stuck from a crash), a second close must not fail --
+        # otherwise a user can never log in again
+        if self.closed:
+            return
         self.closed = True
         # XXX this will not remove draw offers; game-related offers
         # should probably be saved when a game is adjourned
@@ -88,8 +92,14 @@ class Session(object):
             partner.end_partnership(self.partner, self.user)
 
         if self.game:
-            self.game.leave(self.user)
-            assert(self.game == None)
+            try:
+                self.game.leave(self.user)
+            except Exception:
+                # a crash in the game-end path must not leave this
+                # user stuck online (unloggable); detach and continue
+                # the cleanup -- the game is handled by the error path
+                print 'session.close: game.leave crashed; continuing cleanup'
+            self.game = None
         del self.offers_received[:]
         del self.offers_sent[:]
 

@@ -51,8 +51,10 @@ class Online(object):
             self.pin_var.remove(u)
         if u in self.gin_var:
             self.gin_var.remove(u)
-        #if u in shouts_var:
-        #    shouts_var.remove(u)
+        # only remove this object's entry; if a *new* object with the
+        # same name (a re-login) already replaced it, leave that in
+        if self.online_names.get(u.name.lower()) is not u:
+            return
         try:
             del self.online[u.name.lower()]
             del self.online_names[u.name.lower()]
