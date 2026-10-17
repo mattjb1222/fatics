@@ -75,22 +75,32 @@ class Bugwho(Command):
         if args[0] not in [None, 'g', 'p', 'u']:
             raise BadCommandError
         if args[0] is None or args[0] == 'g':
-            # bughouse games
+            # bughouse games.  A bughouse match is two boards (g and
+            # g.bug_link); group them and print each board on its own line:
+            #   White (rating) / Black (rating)  [ time inc rated ]
+            # White is the first player, Black the second.
             conn.write(_('Bughouse games in progress\n'))
             count = 0
-            for g in game.games.values():
-                if g.variant.name == 'bughouse':
-                    count += 1
-                    # one board: its players, plus (if linked) the partner
-                    # board's players, so the pairing is visible
-                    line = '%s (%s) vs %s (%s)' % (
-                        g.white_name, g.white_rating,
-                        g.black_name, g.black_rating)
-                    if g.bug_link is not None and hasattr(g.bug_link, 'white_name'):
-                        line += '  <->  %s (%s) vs %s (%s)' % (
-                            g.bug_link.white_name, g.bug_link.white_rating,
-                            g.bug_link.black_name, g.bug_link.black_rating)
-                    conn.write(line + '\n')
+            seen = set()
+            boards = [g for g in game.games.values()
+                if g.variant.name == 'bughouse']
+            for g in boards:
+                if g.number in seen:
+                    continue
+                partner = getattr(g, 'bug_link', None)
+                pair = [g]
+                if (partner is not None and partner is not g and
+                        hasattr(partner, 'white_name')):
+                    pair.append(partner)
+                    seen.add(partner.number)
+                seen.add(g.number)
+                for b in pair:
+                    conn.write('%s (%s) / %s (%s)  [ %s %s %s ]\n' % (
+                        b.white_name, b.white_rating,
+                        b.black_name, b.black_rating,
+                        b.white_time, b.inc, b.rated_str))
+                conn.write('\n')
+                count += 1
             conn.write(ngettext(' %d game displayed.\n',
                 ' %d games displayed.\n', count) % count)
         if args[0] is None or args[0] == 'p':
