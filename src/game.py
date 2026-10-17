@@ -529,12 +529,15 @@ class PlayedGame(Game):
             # XXX how do we convey the speed and variant, when the current
             # format only gives one field?
             vname = self.speed_variant.variant.name
-        # FICS clients (e.g. Thief) parse <g1> positionally: field 2 is compared
-        # against "bughouse"/"crazyhouse" to set the game type, which gates whether
-        # the drop-piece buffer is shown. Put the variant name in field 2 (and the
-        # player names in fields 1/4) to match, while keeping the legacy key=value
-        # fields as trailing fields so nothing else is lost.
-        self.gameinfo_str = '\n<g1> %s %s %d %s %s %d %d %d p=%d u=%d,%d it=%d,%d i=%d,%d pt=0 rt=%s,%s ts=%d,%d m=2 n=0\n' % (self.white.name, vname, self.number, self.black.name, self.black_rating.gameinfo_str(), self.initial_secs, self.inc, self.rated, self.private, self.white.is_guest, self.black.is_guest, self.initial_secs, self.inc, self.initial_secs, self.inc, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal())
+        # FICS clients (e.g. Thief) parse <g1> positionally: field 1 must be
+        # "Rated" or "Unrated" (Thief's bFound gate) or the variant block is
+        # skipped entirely, and field 2 is compared against "bughouse"/
+        # "crazyhouse" to set the game type, which gates whether the drop-piece
+        # buffer is shown. So put the rated/unrated word in field 1, the variant
+        # name in field 2, the game number in field 3, and the player names in
+        # fields 4/5, while keeping the legacy key=value fields as trailing fields
+        # so nothing else is lost.
+        self.gameinfo_str = '\n<g1> %s %s %d %s %s %s %d %d %d p=%d u=%d,%d it=%d,%d i=%d,%d pt=0 rt=%s,%s ts=%d,%d m=2 n=0\n' % (("Rated" if self.rated else "Unrated"), vname, self.number, self.white.name, self.black.name, self.black_rating.gameinfo_str(), self.initial_secs, self.inc, self.rated, self.private, self.white.is_guest, self.black.is_guest, self.initial_secs, self.inc, self.initial_secs, self.inc, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal())
         if self.white.session.ivars['gameinfo']:
             self.white.write_nowrap(self.gameinfo_str)
         if self.black.session.ivars['gameinfo']:
