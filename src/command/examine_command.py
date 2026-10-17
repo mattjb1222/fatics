@@ -18,6 +18,7 @@
 #
 
 import examine
+import bpgn
 
 from command import *
 
@@ -66,6 +67,36 @@ class Examine(Command):
             if not u2:
                 return
             conn.write('TODO: EXAMINE ADJOURNED GAME\n')
+
+@ics_command('showpgn', 'on')
+class Showpgn(Command):
+    """ Send a stored history game to the client as portable PGN text.
+
+    This is the 'text/raw' examination path (as opposed to 'examine', which
+    sends a server-rendered single-board board list for XBoard/WinBoard).
+    The client decides which it wants by choosing which command to send: a
+    single-board GUI uses 'examine <name> <num>', while a text-based or
+    bughouse-capable client uses 'showpgn <name> <num>' to get the PGN
+    (movetext + move-time comments + drop notation) it can load directly.
+    """
+    def run(self, args, conn):
+        if args[0] is None or args[1] is None:
+            conn.write(_("Usage: showpgn <name> <num>\n"))
+            return
+        u = user.find_by_prefix_for_user(args[0], conn, min_len=2)
+        if not u:
+            return
+        try:
+            num = int(args[1])
+        except ValueError:
+            conn.write(_("Usage: showpgn <name> <num>\n"))
+            return
+        h = u.get_history_game(num, conn)
+        if not h:
+            return
+        conn.write(_("PGN for game %d:\n\n") % num)
+        conn.write(bpgn.make_pgn(h))
+
 
 @ics_command('mexamine', 'w')
 class Mexamine(Command):
