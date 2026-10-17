@@ -65,23 +65,43 @@ class Observe(Command):
                 assert(conn.user not in g.observers)
                 g.observe(conn.user)
 
-@ics_command('pobserve', '', aliases=['pobs'])
+@ics_command('pobserve', 'o', aliases=['pobs'])
 class Pobserve(Command):
     def run(self, args, conn):
-        g = conn.user.session.game
-        if not g:
-            conn.write(_('You are not playing a game.\n'))
-            return
-        if not g.bug_link:
-            conn.write(_('Your game is not linked to a partner game.\n'))
-            return
+        # optional argument: a player name.  Standalone targets self.
+        if args[0] is None:
+            g = conn.user.session.game
+            if not g:
+                conn.write(_('You are not playing a game.\n'))
+                return
+            if not g.bug_link:
+                conn.write(_('Your game is not linked to a partner game.\n'))
+                return
+        else:
+            target = user.find_by_name_exact_for_user(args[0], conn,
+                online_only=True)
+            if target is None:
+                return
+            g = target.session.game
+            if not g:
+                conn.write(_('%s is not playing a game.\n') % args[0])
+                return
+            if not g.bug_link:
+                conn.write(_('That game is not linked to a partner game.\n'))
+                return
         pgame = g.bug_link
         if conn.user in pgame.observers:
-            conn.write(_('You are already observing your partner\'s game %d.\n')
-                % pgame.number)
+            conn.write(_('You are already observing game %d.\n') % pgame.number)
+        elif conn.user in pgame.players:
+            conn.write(_('You are a player in that game, so you cannot observe it.\n'))
         else:
-            assert(conn.user not in pgame.players)
             pgame.observe(conn.user)
+
+    def usage(self, conn):
+        conn.write(_('Usage: pobserve [name]\n')
+            + _('  Observe the partner board (bug_link) of a bughouse game.\n')
+            + _('  With no argument, uses the game you are playing;\n')
+            + _('  with a name, uses that player\'s game.\n'))
 
 @ics_command('follow', 'o')
 class Follow(Command):
