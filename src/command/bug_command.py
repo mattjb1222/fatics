@@ -87,12 +87,12 @@ class Bugwho(Command):
             for g in boards:
                 if g.number in seen:
                     continue
-                partner = getattr(g, 'bug_link', None)
+                pboard = getattr(g, 'bug_link', None)
                 pair = [g]
-                if (partner is not None and partner is not g and
-                        hasattr(partner, 'white_name')):
-                    pair.append(partner)
-                    seen.add(partner.number)
+                if (pboard is not None and pboard is not g and
+                        hasattr(pboard, 'white_name')):
+                    pair.append(pboard)
+                    seen.add(pboard.number)
                 seen.add(g.number)
                 for b in pair:
                     conn.write('%s (%s) / %s (%s)  [ %s %s %s ]\n' % (
