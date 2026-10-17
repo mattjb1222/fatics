@@ -104,15 +104,21 @@ class Bugwho(Command):
             conn.write(ngettext(' %d game displayed.\n',
                 ' %d games displayed.\n', count) % count)
         if args[0] is None or args[0] == 'p':
+            def in_bughouse(u):
+                g = u.session.game
+                return bool(g) and g.variant.name == 'bughouse'
             conn.write(_('Partnerships not playing bughouse\n'))
+            count = 0
             for p in partner.partners:
                 [p1, p2] = sorted(list(p), key=lambda p: p.name)
+                if in_bughouse(p1) or in_bughouse(p2):
+                    continue
                 conn.write('%s %s / %s %s\n' %
                     (p1.get_rating(speed_variant.from_names('blitz',
                         'bughouse')), p1.get_display_name(),
                         p2.get_rating(speed_variant.from_names('blitz',
                         'bughouse')), p2.get_display_name()))
-            count = len(partner.partners)
+                count += 1
             conn.write(ngettext(' %d partnership displayed.\n',
                 '  %d partnerships displayed.\n', count) % count)
 
