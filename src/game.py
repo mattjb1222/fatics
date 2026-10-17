@@ -378,7 +378,7 @@ class Game(object):
             else:
                 mv = self.variant.pos.history.get_move(i)
                 move_str = '%-7s (%s)' % (mv.to_san(),
-                    time_format.hms(mv.time, conn.user))
+                    time_format.hms(mv.time or 0, conn.user))
             if i % 2 == 0:
                 conn.write('%3d.  %-23s ' % (int((i + 3) / 2),move_str))
             else:
@@ -553,14 +553,14 @@ class PlayedGame(Game):
                 mv.time = 0.0 # XXX
                 self.variant.do_move(mv)
 
-        # bughouse is a special case: the clock starts immediately,
-        # rather than waiting for moves to be made (see next_move)
-        if self.speed_variant.variant.name == 'bughouse':
-            if self.clock.is_ticking:
-                # can't happen right now, but don't lose track of a
-                # ticking clock
-                self.clock.stop()
-            self.clock.start(self.variant.get_turn())
+        # the clock starts immediately (see next_move), so the first
+        # player's clock ticks from the start of the game, as in FICS
+        # (a resumed game starts ticking on the side to move)
+        if self.clock.is_ticking:
+            # can't happen right now, but don't lose track of a
+            # ticking clock
+            self.clock.stop()
+        self.clock.start(self.variant.get_turn())
 
         assert(self.white.session.game is None)
         assert(self.black.session.game is None)
@@ -782,16 +782,18 @@ class PlayedGame(Game):
             o.decline()
 
         time = 0.0
-        # a bughouse clock starts immediately (see __init__), so it must
-        # be handled from the very first move
-        is_bughouse = self.variant.name == 'bughouse'
-        if self.is_active and (self.variant.pos.ply > 1 or is_bughouse):
+        # set before the clock block: a crash mid-block must not leave
+        # mv.time unset (write_moves would then crash on divmod(None))
+        mv.time = time
+        # the clock starts immediately (see __init__), so the clock
+        # block must run from the very first move
+        if self.is_active and self.variant.pos.ply > 0:
             moved_side = opp(self.variant.get_turn())
             if self.clock.is_ticking:
                 # timeseal: only usable if we have a ping timestamp,
                 # i.e. the previous move was pinged.  A game's first move
-                # has none (the bughouse clock starts immediately, so this
-                # block runs from ply 1); fall back to a plain got_move.
+                # has none (the clock starts immediately, so this block
+                # runs from ply 1); fall back to a plain got_move.
                 if (conn.user.has_timeseal() and
                         conn.session.move_sent_timestamp is not None):
                     elapsed_ms = (conn.session.timeseal_last_timestamp -
