@@ -33,7 +33,7 @@ class Config(object):
     idle_timeout = 60 * 60
 
     # maximum number of players connected to the server at once
-    maxplayer = 49
+    maxplayer = 256
 
     # number of connections reserved for admins
     admin_reserve = 5

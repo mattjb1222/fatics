@@ -187,6 +187,13 @@ class TelnetTransport(protocol.Protocol):
         pass
 
     def connectionMade(self):
+        # disable Nagle's algorithm so each write is sent as its own TCP segment
+        # instead of being coalesced; this keeps board/holding lines discrete so
+        # clients that only parse individual <12>/<b1> messages reliably receive them
+        try:
+            self.transport.setTcpNoDelay(1)
+        except Exception:
+            pass
         if self.protocolFactory is not None:
             self.protocol = self.protocolFactory(*self.protocolArgs, **self.protocolKwArgs)
             try:

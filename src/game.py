@@ -223,7 +223,11 @@ class Game(object):
             # style 1, the default
             out = self.variant.to_style1(u)
         wire_log(u, 'board', out)
-        u.write_nowrap(out)
+        # write each line as its own message (combined with TCP_NODELAY in telnet.py)
+        # so clients that only parse discrete <12>/<b1> lines reliably receive the holding lines
+        for line in out.split('\n'):
+            if line:
+                u.write_nowrap(line + '\n')
 
     def __eq__(self, other):
         return self.number == other.number
