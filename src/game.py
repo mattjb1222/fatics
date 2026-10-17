@@ -43,7 +43,7 @@ if os.environ.get('FATICS_WIRE_DEBUG'):
     _wire_log_fh = open(os.environ['FATICS_WIRE_DEBUG'], 'a')
 
 def wire_log(client, label, s):
-    """Log the exact wire bytes for a board/holding write (FATICS_WIRE_DEBUG only)."""
+    """Log the exact wire bytes for a board/holding/result write (FATICS_WIRE_DEBUG only)."""
     if _wire_log_fh is None:
         return
     wire = s.replace('\xff', '\xff\xff').replace('\n', '\r\n')  # TelnetTransport._escape
@@ -893,6 +893,8 @@ class PlayedGame(Game):
             self.white_name, self.black_name, msg, result_code)
         self.white.write_nowrap(line)
         self.black.write_nowrap(line)
+        wire_log(self.white, 'result', line)
+        wire_log(self.black, 'result', line)
         for u in self.observers:
             u.write_nowrap(line)
         for u in online.gin_var:

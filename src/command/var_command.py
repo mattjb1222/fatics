@@ -115,7 +115,13 @@ class Variables(Command):
             if  u.session.partner:
                 conn.write(_('Bughouse partner: %s\n') % u.session.partner.name)
             if u.session.following:
-                conn.write(_('Following: %s\n') % u.session.following)
+                # FICS labels a follow of your bughouse partner
+                # "<self>'s partner" rather than the partner's name
+                if (u.session.partner and
+                        u.session.following == u.session.partner):
+                    conn.write(_("Following: %s's partner\n") % u.name)
+                else:
+                    conn.write(_('Following: %s\n') % u.session.following)
 
         for i in range(1, 10):
             fname = 'f' + str(i)

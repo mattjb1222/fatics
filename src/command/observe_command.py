@@ -28,6 +28,12 @@ def follow_user(conn, u2):
     if u2 == conn.user:
         conn.write(_("You can't follow your own games.\n"))
         return
+    u = conn.user
+    # FICS labels a follow of your bughouse partner "<self>'s partner"
+    # rather than the partner's name; this label is also what private
+    # handling uses to exempt the follow from private=1.
+    label = ("%s's partner" % u.name
+        if (u.session.partner and u2 == u.session.partner) else u2.name)
     if conn.user.session.following:
         if u2 == conn.user.session.following:
             conn.write(_("You are already following %s's games.\n")
@@ -37,8 +43,7 @@ def follow_user(conn, u2):
             % conn.user.session.following.name)
         conn.user.session.following.session.followed_by.remove(conn.user)
         conn.user.session.following = None
-    conn.write(_("You will now be following %s's games.\n")
-        % u2.name)
+    conn.write(_("You will now be following %s.\n") % label)
     conn.user.session.following = u2
     u2.session.followed_by.add(conn.user)
 
@@ -132,6 +137,10 @@ class Pfollow(Command):
             conn.write(_('%s is not online.\n') % u2.name)
             return
         follow_user(conn, u2)
+
+    def usage(self, conn):
+        conn.write(_('Usage: pfollow\n')
+            + _('  Follow your bughouse partner\'s games.\n'))
 
 @ics_command('allobservers', 'o')
 class Allobservers(Command):

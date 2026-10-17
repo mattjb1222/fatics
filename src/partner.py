@@ -21,6 +21,14 @@ from offer import Offer
 
 partners = []
 
+class _UserAsConn(object):
+    """Adapt a User to the conn interface follow_user() expects.
+    Used for the automatic partner follow (no live conn involved)."""
+    def __init__(self, u):
+        self.user = u
+    def write(self, s):
+        self.user.write(s)
+
 class Partner(Offer):
     def __init__(self, a, b):
         Offer.__init__(self, 'partnership request')
@@ -55,6 +63,12 @@ class Partner(Offer):
         self.b.session.partner = self.a
         partners.append(set([self.a, self.b]))
 
+        # FICS behavior: partners automatically follow each other's games
+        # (their follow shows "<self>'s partner")
+        from command.observe_command import follow_user
+        follow_user(_UserAsConn(self.a), self.b)
+        follow_user(_UserAsConn(self.b), self.a)
+
         # end any pending partnership offers
         for offer in self.a.session.offers_sent[:]:
             if offer.name == 'partnership request':
@@ -88,6 +102,15 @@ def end_partnership(p1, p2):
     assert(p1.session.partner == p2)
     assert(p2.session.partner == p1)
     partners.remove(set([p1, p2]))
+    # undo the automatic follow made when the partnership was formed
+    if p1.session.following == p2:
+        p2.session.followed_by.remove(p1)
+        p1.session.following = None
+        p1.write_('You will no longer be following %s\'s games.\n', p2.name)
+    if p2.session.following == p1:
+        p1.session.followed_by.remove(p2)
+        p2.session.following = None
+        p2.write_('You will no longer be following %s\'s games.\n', p1.name)
     p1.session.partner = None
     p2.session.partner = None
     p1.write_('You no longer have a bughouse partner.\n')
