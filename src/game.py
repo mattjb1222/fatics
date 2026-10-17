@@ -16,6 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import random
 import time
 import datetime
@@ -32,6 +33,23 @@ import variant
 from db import db
 from online import online
 from game_constants import *
+
+# Optional wire-format diagnostic. Set FATICS_WIRE_DEBUG=/path/to/log to log the
+# exact bytes send_board/send_holding write (after telnet \n -> \r\n escaping),
+# tagged with timestamp + client name, so they can be compared against a
+# reference client/server. Inert unless the env var is set.
+_wire_log_fh = None
+if os.environ.get('FATICS_WIRE_DEBUG'):
+    _wire_log_fh = open(os.environ['FATICS_WIRE_DEBUG'], 'a')
+
+def wire_log(client, label, s):
+    """Log the exact wire bytes for a board/holding write (FATICS_WIRE_DEBUG only)."""
+    if _wire_log_fh is None:
+        return
+    wire = s.replace('\xff', '\xff\xff').replace('\n', '\r\n')  # TelnetTransport._escape
+    _wire_log_fh.write("[%s] %s %s\n" % (time.strftime('%H:%M:%S'), client.name, label))
+    _wire_log_fh.write("  WIRE: %r\n" % wire)
+    _wire_log_fh.flush()
 
 games = {}
 
@@ -198,12 +216,14 @@ class Game(object):
                     u.session.ivars['compressmove'] and
                     self.variant.pos.get_last_move() is not None and
                     not isolated):
-                u.write_nowrap(self.variant.to_deltaboard(u))
+                out = self.variant.to_deltaboard(u)
             else:
-                u.write_nowrap(self.variant.to_style12(u))
+                out = self.variant.to_style12(u)
         else:
             # style 1, the default
-            u.write_nowrap(self.variant.to_style1(u))
+            out = self.variant.to_style1(u)
+        wire_log(u, 'board', out)
+        u.write_nowrap(out)
 
     def __eq__(self, other):
         return self.number == other.number
@@ -735,6 +755,7 @@ class PlayedGame(Game):
         (holding_white, holding_black) = self.variant.pos.get_holding_str()
         line = 'holding [%s] [%s]\n' % (holding_white, holding_black)
         for p in self.players:
+            wire_log(p, 'holding', line)
             p.write_nowrap(line)
 
     def next_move(self, mv, conn):
