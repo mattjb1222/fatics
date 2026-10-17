@@ -237,6 +237,26 @@ class PgnGame(object):
             self.tags['BlackA'], self.tags['WhiteB'], self.tags['BlackB'])
 
 
+def _split_move_times(mt_raw):
+    if isinstance(mt_raw, str):
+        return mt_raw.split(' ')
+    if mt_raw:
+        return list(mt_raw)
+    return []
+
+
+def _make_movetext(moves, times):
+    mt = []
+    for i, mv in enumerate(moves):
+        if i % 2 == 0:
+            mt.append('%d. ' % (i // 2 + 1))
+        mt.append(mv)
+        if i < len(times) and times[i]:
+            mt.append(' {%s}' % times[i])
+        mt.append(' ')
+    return ''.join(mt)
+
+
 def make_pgn(h):
     """ Serialize a stored/history game into PGN text.
 
@@ -254,16 +274,8 @@ def make_pgn(h):
     genuine four-board bughouse game (``1A/1B/1a/1b`` streams, as in
     data/bughouse.bpgn) is *not* produced here -- that format only applies
     to externally-imported games, which are passed through unchanged. """
-    movetext = (h.get('movetext') or '').split(' ')
-    movetext = [m for m in movetext if m]
-
-    mt_raw = h.get('move_times')
-    if isinstance(mt_raw, str):
-        move_times = mt_raw.split(' ')
-    elif mt_raw:
-        move_times = list(mt_raw)
-    else:
-        move_times = []
+    movetext = [m for m in (h.get('movetext') or '').split(' ') if m]
+    move_times = _split_move_times(h.get('move_times'))
 
     color = h.get('color_char')
     ur = h.get('user_rating') or 0
@@ -300,15 +312,97 @@ def make_pgn(h):
     out.append('[Annotator "FatICS"]')
     out.append('')
 
-    mt = []
-    for i, mv in enumerate(movetext):
-        if i % 2 == 0:
-            mt.append('%d. ' % (i // 2 + 1))
-        mt.append(mv)
-        if i < len(move_times) and move_times[i]:
-            mt.append(' {%s}' % move_times[i])
-        mt.append(' ')
-    out.append(''.join(mt))
+    out.append(_make_movetext(movetext, move_times))
+    out.append(result)
+
+    return '\n'.join(out) + '\n'
+
+
+def make_bughouse_pgn(h, partner):
+    """ Serialize a bughouse match (two linked board-games) into a
+    two-board PGN.
+
+    ``h`` is this game's history entry; ``partner`` is the partner board's
+    game row (as returned by ``db.game_get``: white_name, black_name,
+    white_rating, black_rating, movetext, move_times, result, time, inc,
+    when_ended).
+
+    FatICS stores a bughouse match as two independent two-player games
+    (one board each), linked via the game_partner table.  This emits one
+    PGN with the four players (White A/B = the two board whites, Black
+    A/B = the two board blacks) and interleaved move streams
+    (1a/1A/1b/1B), matching the genuine bpgn layout in data/bughouse.bpgn.
+    Drops carry over verbatim as 'Piece@square'; a '{time}' comment
+    follows each move. """
+    g_moves = [m for m in (h.get('movetext') or '').split(' ') if m]
+    g_times = _split_move_times(h.get('move_times'))
+    p_moves = [m for m in (partner.get('movetext') or '').split(' ') if m]
+    p_times = _split_move_times(partner.get('move_times'))
+
+    white_a, black_a = h['white_name'], h['black_name']
+    white_b, black_b = partner['white_name'], partner['black_name']
+
+    color = h.get('color_char')
+    ur = h.get('user_rating') or 0
+    orr = h.get('opp_rating') or 0
+    if color == 'W':
+        white_a_elo, black_a_elo = ur, orr
+    else:
+        white_a_elo, black_a_elo = orr, ur
+    wb = partner.get('white_rating')
+    bb = partner.get('black_rating')
+    white_b_elo = int(wb) if (wb is not None and str(wb).isdigit()) else 0
+    black_b_elo = int(bb) if (bb is not None and str(bb).isdigit()) else 0
+
+    result = h.get('result') or '*'
+    time_min = h.get('time') or 0
+    inc = h.get('inc') or 0
+    we = h.get('when_ended')
+    date = we.strftime('%Y.%m.%d') if hasattr(we, 'strftime') else '????.??.??'
+
+    out = []
+    out.append('[Event "Bughouse (two-board)"]')
+    out.append('[Site "FatICS"]')
+    out.append('[Date "%s"]' % date)
+    out.append('[WhiteA "%s"]' % white_a)
+    out.append('[BlackA "%s"]' % black_a)
+    out.append('[WhiteB "%s"]' % white_b)
+    out.append('[BlackB "%s"]' % black_b)
+    if white_a_elo:
+        out.append('[WhiteAElo "%d"]' % white_a_elo)
+    if black_a_elo:
+        out.append('[BlackAElo "%d"]' % black_a_elo)
+    if white_b_elo:
+        out.append('[WhiteBElo "%d"]' % white_b_elo)
+    if black_b_elo:
+        out.append('[BlackBElo "%d"]' % black_b_elo)
+    out.append('[Result "%s"]' % result)
+    out.append('[TimeControl "%d+%d"]' % (time_min, inc))
+    out.append('[Annotator "FatICS"]')
+    out.append('')
+
+    def emit(num, letter, idx, moves, times):
+        if idx < len(moves):
+            s = '%d%s. %s' % (num, letter, moves[idx])
+            if idx < len(times) and times[idx]:
+                s += ' {%s}' % times[idx]
+            return s + ' '
+        return ''
+
+    max_moves = max(len(g_moves), len(p_moves))
+    max_num = (max_moves + 1) // 2
+    rows = []
+    for n in range(1, max_num + 1):
+        cells = [
+            emit(n, 'a', 2 * (n - 1), g_moves, g_times),
+            emit(n, 'A', 2 * (n - 1) + 1, g_moves, g_times),
+            emit(n, 'b', 2 * (n - 1), p_moves, p_times),
+            emit(n, 'B', 2 * (n - 1) + 1, p_moves, p_times),
+        ]
+        line = ' '.join(c for c in cells if c)
+        if line:
+            rows.append(line)
+    out.append(' '.join(rows))
     out.append(result)
 
     return '\n'.join(out) + '\n'

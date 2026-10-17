@@ -382,6 +382,15 @@ CREATE TABLE `game_idn` (
   UNIQUE KEY(`game_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
+-- bughouse: which stored game is a game's partner board (one row per
+-- board-game, written once both boards of the match are saved)
+CREATE TABLE `game_partner` (
+  `game_id` int(8) NOT NULL,
+  `partner_game_id` int(8) NOT NULL,
+  PRIMARY KEY (`game_id`),
+  INDEX (`partner_game_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+
 -- comments
 DROP TABLE IF EXISTS `user_comment`;
 CREATE TABLE `user_comment` (

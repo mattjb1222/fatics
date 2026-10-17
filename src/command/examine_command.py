@@ -95,6 +95,15 @@ class Showpgn(Command):
         if not h:
             return
         conn.write(_("PGN for game %d:\n\n") % num)
+        # If this is a bughouse board with a saved partner board, emit a
+        # two-board PGN (four players, interleaved 1a/1A/1b/1B); otherwise
+        # a standard single-board two-player PGN.
+        partner_id = h.get('partner_game_id')
+        if partner_id:
+            partner = db.game_get(partner_id)
+            if partner:
+                conn.write(bpgn.make_bughouse_pgn(h, partner))
+                return
         conn.write(bpgn.make_pgn(h))
 
 

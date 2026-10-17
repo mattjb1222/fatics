@@ -747,9 +747,11 @@ class DB(object):
         cursor = self.db.cursor(cursors.DictCursor)
         cursor = self.query(cursor, """SELECT game_id, num, result_char, user_rating,
                 color_char, opp_name, opp_rating, h.eco, flags, h.time,
-                h.inc, h.result_reason, h.when_ended, movetext, move_times, idn
+                h.inc, h.result_reason, h.when_ended, movetext, move_times, idn,
+                partner_game_id
             FROM history AS h LEFT JOIN game USING(game_id)
                 LEFT JOIN game_idn USING (game_id)
+                LEFT JOIN game_partner USING (game_id)
             WHERE user_id=%s
             ORDER BY when_ended DESC
             LIMIT 10""", (user_id,))
@@ -1120,6 +1122,32 @@ class DB(object):
         cursor = self.query(cursor, """INSERT INTO game_idn VALUES(%s,%s)""",
             (game_id, idn))
         cursor.close()
+
+    def game_partner_add(self, game_id, partner_game_id):
+        cursor = self.db.cursor()
+        cursor = self.query(cursor, """INSERT INTO game_partner VALUES(%s,%s)""",
+            (game_id, partner_game_id))
+        cursor.close()
+
+    def game_get(self, game_id):
+        """ Load a full game row by id (used to fetch a bughouse game's
+        partner board for a two-board export). """
+        cursor = self.db.cursor(cursors.DictCursor)
+        cursor = self.query(cursor, """SELECT * FROM game WHERE game_id=%s""",
+            (game_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        return row
+
+    def game_get_partner(self, game_id):
+        """ Return the partner game id for a bughouse game (or None). """
+        cursor = self.db.cursor()
+        cursor = self.query(cursor,
+            """SELECT partner_game_id FROM game_partner WHERE game_id=%s""",
+            (game_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        return row[0] if row else None
 
     def get_server_message(self, name):
         cursor = self.db.cursor()

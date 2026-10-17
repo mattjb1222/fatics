@@ -67,6 +67,18 @@ class History(object):
         if game.idn is not None:
             db.game_add_idn(game_id, game.idn)
 
+        game.saved_game_id = game_id
+        # Persist the bughouse partner link (both directions).  A game's
+        # partner board is a separate saved game whose game_id only exists
+        # once *it* is saved, so the board saved second writes both rows
+        # (it can read the first board's id off the in-memory bug_link).
+        partner = getattr(game, 'bug_link', None)
+        if partner is not None and partner is not game:
+            pid = getattr(partner, 'saved_game_id', None)
+            if pid is not None and pid != game_id:
+                db.game_partner_add(game_id, pid)
+                db.game_partner_add(pid, game_id)
+
         flags = '%s%s' % (game.speed_variant.speed.abbrev,
             game.speed_variant.variant.abbrev)
 
