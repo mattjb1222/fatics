@@ -346,6 +346,13 @@ class Game(object):
     def get_ply_count(self):
         return self.variant.pos.ply - self.variant.pos.start_ply
 
+    def game_type_str(self):
+        # For context strings: use the speed name for normal chess, but the
+        # variant name for variants (so "crazyhouse", not "blitz crazyhouse").
+        if self.speed_variant.variant.name == 'chess':
+            return self.speed_variant.speed.name
+        return self.speed_variant.variant.name
+
     def write_moves(self, conn):
         # don't translate since clients parse these messages
         conn.write("\nMovelist for game %d:\n\n" % self.number)
@@ -361,7 +368,7 @@ class Game(object):
             self.white_rating, self.black_name, self.black_rating, time_str))
 
         conn.write("%s %s match, initial time: %d minutes, increment: %d seconds.\n\n" %
-            (self.rated_str.capitalize(), self.speed_variant,
+            (self.rated_str.capitalize(), self.game_type_str(),
                 self.white_time, self.inc))
         conn.write('Move  %-23s %s\n----  ---------------------   ---------------------\n' % (self.white_name, self.black_name))
         i = self.variant.pos.start_ply & ~1
@@ -411,7 +418,7 @@ class Game(object):
         if self.gtype == PLAYED:
             conn.write(_('  %s (%s) vs %s (%s) %s %s game.\n') % (
                 self.white_name, self.white_rating, self.black_name,
-                self.black_rating, self.rated_str, self.speed_variant))
+                self.black_rating, self.rated_str, self.game_type_str()))
             # XXX display something different for non-fischer clocks?
             conn.write(_('  Time controls: %d %d\n') %
                 (60 * self.white_time, self.inc))
@@ -492,16 +499,9 @@ class PlayedGame(Game):
 
         # GuestBEZD (++++) admin (1000) unrated blitz 2 12
         # Only one word is given in this position: the speed name
-        # for normal games, or the variant name for variant games
-        # (clients like icsdroneng can't parse "blitz crazyhouse"
-        # as two words here; speed is derivable from min/inc).
-        if self.speed_variant.variant.name == 'chess':
-            game_type_str = self.speed_variant.speed.name
-        else:
-            game_type_str = self.speed_variant.variant.name
         self.info_str = '%s (%s) %s (%s) %s %s %d %d' % (
             self.white_name, self.white_rating, self.black_name,
-            self.black_rating, self.rated_str, game_type_str,
+            self.black_rating, self.rated_str, self.game_type_str(),
             self.white_time, self.inc)
         # it seems original FICS uses "creating" here even for
         # adjourned games
@@ -511,7 +511,7 @@ class PlayedGame(Game):
 
         create_str_2 = '\n{Game %d (%s vs. %s) %s %s %s match.}\n' % (
             self.number, self.white_name, self.black_name, creating,
-            self.rated_str, self.speed_variant)
+            self.rated_str, self.game_type_str())
         self.white.write_nowrap(create_str_2)
         self.black.write_nowrap(create_str_2)
 
@@ -534,7 +534,7 @@ class PlayedGame(Game):
         # the drop-piece buffer is shown. Put the variant name in field 2 (and the
         # player names in fields 1/4) to match, while keeping the legacy key=value
         # fields as trailing fields so nothing else is lost.
-        self.gameinfo_str = '\n<g1> %s %s %d %s %s %d %d %d p=%d u=%d,%d it=%d,%d i=%d,%d pt=0 rt=%s,%s ts=%d,%d m=2 n=0\n' % (self.white.name, vname, self.number, self.black.name, self.black_rating.gameinfo_str(), self.initial_secs, self.inc, self.rated, self.private, self.white.is_guest, self.black.is_guest, self.initial_secs, self.inc, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal())
+        self.gameinfo_str = '\n<g1> %s %s %d %s %s %d %d %d p=%d u=%d,%d it=%d,%d i=%d,%d pt=0 rt=%s,%s ts=%d,%d m=2 n=0\n' % (self.white.name, vname, self.number, self.black.name, self.black_rating.gameinfo_str(), self.initial_secs, self.inc, self.rated, self.private, self.white.is_guest, self.black.is_guest, self.initial_secs, self.inc, self.initial_secs, self.inc, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal())
         if self.white.session.ivars['gameinfo']:
             self.white.write_nowrap(self.gameinfo_str)
         if self.black.session.ivars['gameinfo']:
@@ -589,7 +589,7 @@ class PlayedGame(Game):
                 #    self.info_str, self.number))
                 u.write('\nGame notification: %s (%s) vs. %s (%s) %s %s %d %d: Game %d\n' % (
                     self.white_name, self.white_rating, self.black_name,
-                    self.black_rating, self.rated_str, self.speed_variant,
+                    self.black_rating, self.rated_str, self.game_type_str(),
                     self.white_time, self.inc, self.number))
 
         # notify users with the gin variable set

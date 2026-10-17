@@ -83,7 +83,8 @@ class Bugwho(Command):
             count = 0
             seen = set()
             boards = [g for g in game.games.values()
-                if g.variant.name == 'bughouse']
+                if getattr(g, 'variant', None) is not None
+                and g.variant.name == 'bughouse']
             for g in boards:
                 if g.number in seen:
                     continue
@@ -106,7 +107,8 @@ class Bugwho(Command):
         if args[0] is None or args[0] == 'p':
             def in_bughouse(u):
                 g = u.session.game
-                return bool(g) and g.variant.name == 'bughouse'
+                return bool(g) and getattr(g, 'variant', None) is not None \
+                    and g.variant.name == 'bughouse'
             conn.write(_('Partnerships not playing bughouse\n'))
             count = 0
             for p in partner.partners:
