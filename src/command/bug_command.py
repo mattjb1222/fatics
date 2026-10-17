@@ -81,6 +81,16 @@ class Bugwho(Command):
             for g in game.games.values():
                 if g.variant.name == 'bughouse':
                     count += 1
+                    # one board: its players, plus (if linked) the partner
+                    # board's players, so the pairing is visible
+                    line = '%s (%s) vs %s (%s)' % (
+                        g.white_name, g.white_rating,
+                        g.black_name, g.black_rating)
+                    if g.bug_link is not None and hasattr(g.bug_link, 'white_name'):
+                        line += '  <->  %s (%s) vs %s (%s)' % (
+                            g.bug_link.white_name, g.bug_link.white_rating,
+                            g.bug_link.black_name, g.bug_link.black_rating)
+                    conn.write(line + '\n')
             conn.write(ngettext(' %d game displayed.\n',
                 ' %d games displayed.\n', count) % count)
         if args[0] is None or args[0] == 'p':
