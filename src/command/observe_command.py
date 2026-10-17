@@ -126,12 +126,24 @@ class Follow(Command):
             if u2:
                 follow_user(conn, u2)
 
-@ics_command('pfollow', '')
+@ics_command('pfollow', 'o')
 class Pfollow(Command):
     def run(self, args, conn):
-        u2 = conn.user.session.partner
+        # optional argument: a player name.  Standalone targets self;
+        # with a name, follows that player's partner.
+        if args[0] is None:
+            u = conn.user
+        else:
+            u = user.find_by_prefix_for_user(args[0], conn,
+                online_only=True)
+            if u is None:
+                return
+        u2 = u.session.partner
         if not u2:
-            conn.write(_('You have no partner.\n'))
+            if args[0] is None:
+                conn.write(_('You have no partner.\n'))
+            else:
+                conn.write(_('%s has no partner.\n') % u.name)
             return
         if not u2.is_online:
             conn.write(_('%s is not online.\n') % u2.name)
@@ -139,8 +151,9 @@ class Pfollow(Command):
         follow_user(conn, u2)
 
     def usage(self, conn):
-        conn.write(_('Usage: pfollow\n')
-            + _('  Follow your bughouse partner\'s games.\n'))
+        conn.write(_('Usage: pfollow [name]\n')
+            + _('  With no argument, follow your own bughouse partner\'s games;\n')
+            + _('  with a name, follow that player\'s partner.\n'))
 
 @ics_command('allobservers', 'o')
 class Allobservers(Command):
