@@ -65,7 +65,7 @@ class Observe(Command):
                 assert(conn.user not in g.observers)
                 g.observe(conn.user)
 
-@ics_command('pobserve', 'pobs')
+@ics_command('pobserve', '', aliases=['pobs'])
 class Pobserve(Command):
     def run(self, args, conn):
         g = conn.user.session.game

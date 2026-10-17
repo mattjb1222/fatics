@@ -45,14 +45,17 @@ from config import config
 # lowercase <-> case-insensitive
 
 class Command(object):
-    def __init__(self, name, param_str, admin_level):
+    def __init__(self, name, param_str, admin_level, aliases=()):
         assert(hasattr(self, 'run'))
         self.name = name
         self.param_str = param_str
         self.admin_level = admin_level
-        command_parser.command_list.admin_cmds[name] = self
-        if admin_level <= admin.Level.user:
-            command_parser.command_list.cmds[name] = self
+        # a command may be registered under extra alias names; each alias
+        # resolves to the same Command object
+        for n in [name] + list(aliases):
+            command_parser.command_list.admin_cmds[n] = self
+            if admin_level <= admin.Level.user:
+                command_parser.command_list.cmds[n] = self
 
     def help(self, conn):
         conn.write("help for %s\n" % self.name)
@@ -61,17 +64,18 @@ class Command(object):
         conn.write("Usage: TODO for %s\n" % self.name)
 
 class ics_command(object):
-    def __init__(self, name, param_str, admin_level=admin.Level.user):
+    def __init__(self, name, param_str, admin_level=admin.Level.user, aliases=()):
         self.name = name
         self.param_str = param_str
         self.admin_level = admin_level
+        self.aliases = aliases
 
     def __call__(self, f):
         # just a check that the naming convention is correct
         import inspect
         assert(inspect.getmro(f)[0].__name__ == self.name.capitalize())
         # instantiate the decorated class at decoration time
-        f(self.name, self.param_str, self.admin_level)
+        f(self.name, self.param_str, self.admin_level, self.aliases)
         #def wrapped_f(*args):
         #    raise RuntimeError('command objects should not be instantiated directly')
         return wrapped_f
