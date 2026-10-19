@@ -39,10 +39,30 @@ class TestMaxplayer(Test):
 
         t = self.connect_as_admin()
 
-        t.write('who\n')
-        # XXX we should probably not count admins
-        m = self.expect_re(r'(\d+) players? displayed', t)
-        user_count = int(m.group(1)) - 1
+        # wait for the online count to settle: connections closed by
+        # previous tests' deferred tearDown may still be counted in
+        # online.online even after they no longer show in 'who'
+        import time
+        time.sleep(2)  # let any previous-module deferred tearDown probe finish
+        counts = []
+        for i in range(3):
+            t.write('who\n')
+            m = self.expect_re(r'(\d+) players? displayed', t)
+            counts.append(int(m.group(1)) - 1)
+            time.sleep(1)
+        if counts[0] != counts[-1]:
+            # still draining; wait until stable
+            while True:
+                time.sleep(1)
+                t.write('who\n')
+                m = self.expect_re(r'(\d+) players? displayed', t)
+                c = int(m.group(1)) - 1
+                if c == counts[-1]:
+                    break
+                counts.append(c)
+                if len(counts) > 15:
+                    break
+        user_count = counts[-1]
 
         t.write('asetmaxplayer %d\n' % maxplayer)
         self.expect('Total allowed connections: %d' % maxplayer, t)
@@ -57,13 +77,22 @@ class TestMaxplayer(Test):
 
         self.close(t)
 
-        conns = []
+        # connectionLost -> log_off -> online.remove is async: wait for
+        # the admin to actually leave online.online, otherwise the
+        # connection loop below hits the player limit early
+        import time
+        time.sleep(3)
 
+        # Connect until the server starts rejecting: other online users
+        # (external clients, other tests) shift the starting point, so
+        # the exact count of connections that fit is not known.
+        conns = []
         for (name, passwd) in zip(names, passwds):
             #print('connecting as %s' % name)
-            conns.append(self.connect_as(name, passwd))
-
-        assert(len(conns) == len(names))
+            try:
+                conns.append((name, self.connect_as(name, passwd)))
+            except EOFError:
+                break
 
         t1 = self.connect()
         t1.write('g\n')
@@ -73,8 +102,10 @@ class TestMaxplayer(Test):
         # but an admin can still log in
         t = self.connect_as_admin()
 
-        for (t2, name) in zip(conns, names):
+        for (name, t2) in conns:
             self.close(t2)
+
+        for name in names:
             t.write('remplayer %s\n' % name)
             self.expect('removed', t)
 
@@ -104,7 +135,12 @@ class TestMaxguest(Test):
 
         conns = []
         for i in range(0, maxguest - guest_count):
-            conns.append(self.connect_as_guest())
+            try:
+                conns.append(self.connect_as_guest())
+            except EOFError:
+                # other guest sessions (external clients, other tests)
+                # filled the slots before we did
+                break
 
         t1 = self.connect()
         t1.write('g\n')

@@ -293,13 +293,26 @@ class Game(object):
         self.observers.remove(u)
 
     def free(self):
-        for o in self.pending_offers[:]:
-            o.decline(notify=False)
-        assert(not self.pending_offers)
-        for u in self.observers.copy():
-            self.unobserve(u)
-        assert(not self.observers)
-        del games[self.number]
+        # The removal from game.games must happen no matter what: if
+        # unobserve/cleanup raises (e.g. a partner already logged off),
+        # a bughouse board would otherwise stay listed in bugwho
+        # forever, with its players' partnership stuck "in game".
+        try:
+            for o in self.pending_offers[:]:
+                o.decline(notify=False)
+            assert(not self.pending_offers)
+            for u in self.observers.copy():
+                try:
+                    self.unobserve(u)
+                except Exception:
+                    # best effort: still drop the observer bookkeeping
+                    try:
+                        u.session.observed.remove(self)
+                    except (ValueError, AttributeError):
+                        pass
+                    self.observers.discard(u)
+        finally:
+            games.pop(self.number, None)
 
     def get_eco(self):
         i = min(self.variant.pos.ply, 36)
@@ -896,7 +909,7 @@ class PlayedGame(Game):
                             self.bug_link.result('%s and %s checkmated' % (self.bug_link.black_name, self.white_name), '1-0')
                             self.result('%s and %s checkmated' % (self.bug_link.black_name, self.white_name), '0-1')
                         else:
-                            self.bug_link.result('%s and %s checkmated' % (self.bug_link.white_name, self.black_name, '0-1'))
+                            self.bug_link.result('%s and %s checkmated' % (self.bug_link.white_name, self.black_name), '0-1')
                             self.result('%s and %s checkmated' % (self.bug_link.white_name, self.black_name), '1-0')
                     else:
                         self.is_active = False
@@ -972,40 +985,53 @@ class PlayedGame(Game):
 
         self.clock.stop()
         self.is_active = False
-        if result_code != '*' and was_active:
-            history.history.save_game(self, msg, result_code)
-            if self.rated:
+        try:
+            if result_code != '*' and was_active:
+                try:
+                    history.history.save_game(self, msg, result_code)
+                except Exception:
+                    # a save failure (e.g. an unrecognized result
+                    # message) must not leave this board stuck in
+                    # game.games (bugwho) -- log it, keep going
+                    import traceback
+                    traceback.print_exc()
+                if self.rated:
+                    try:
+                        if result_code == '1-0':
+                            (white_score, black_score) = (1.0, 0.0)
+                        elif result_code == '1/2-1/2':
+                            (white_score, black_score) = (0.5, 0.5)
+                        elif result_code == '0-1':
+                            (white_score, black_score) = (0.0, 1.0)
+                        else:
+                            raise RuntimeError('game.result: unexpected result code')
+                        rating.update_ratings(self, white_score, black_score)
+                    except Exception:
+                        import traceback
+                        traceback.print_exc()
+
+            if self.bug_link and self.bug_link.is_active:
                 if result_code == '1-0':
-                    (white_score, black_score) = (1.0, 0.0)
-                elif result_code == '1/2-1/2':
-                    (white_score, black_score) = (0.5, 0.5)
+                    self.bug_link.result("%s's partner won" %
+                        self.white.session.partner.name, '0-1')
                 elif result_code == '0-1':
-                    (white_score, black_score) = (0.0, 1.0)
+                    self.bug_link.result("%s's partner won" %
+                        self.black.session.partner.name, '1-0')
+                elif result_code == '1/2-1/2':
+                    self.bug_link.result("Partners' game drawn", '1/2-1/2')
+                elif result_code == '*':
+                    if 'Game adjourned' in msg:
+                        self.bug_link.adjourn("Partners' game adjourned")
+                    else:
+                        # abort, abort-by-disconnection, or any other
+                        # incomplete result: end the partners' board too
+                        self.bug_link.result("Partners' game aborted", '*')
                 else:
-                    raise RuntimeError('game.result: unexpected result code')
-                rating.update_ratings(self, white_score, black_score)
-
-        if self.bug_link and self.bug_link.is_active:
-            if result_code == '1-0':
-                self.bug_link.result("%s's partner won" %
-                    self.white.session.partner.name, '0-1')
-            elif result_code == '0-1':
-                self.bug_link.result("%s's partner won" %
-                    self.black.session.partner.name, '1-0')
-            elif result_code == '1/2-1/2':
-                self.bug_link.result("Partners' game drawn", '1/2-1/2')
-            elif result_code == '*':
-                if 'Game adjourned' in msg:
-                    self.bug_link.adjourn("Partners' game adjourned")
-                else:
-                    # abort, abort-by-disconnection, or any other
-                    # incomplete result: end the partners' board too
-                    self.bug_link.result("Partners' game aborted", '*')
-            else:
-                print('unexpected result code %s' % result_code)
-                assert(False)
-
-        self.free()
+                    print('unexpected result code %s' % result_code)
+                    assert(False)
+        finally:
+            # must always run, even if save/rating/propagation raised
+            self.free()
 
     def moretime(self, secs, u):
         """ Player "u" adds more time to the clock of his or her
@@ -1096,10 +1122,12 @@ class PlayedGame(Game):
 
     def free(self):
         super(PlayedGame, self).free()
-        assert(self.white.session.game == self)
-        assert(self.black.session.game == self)
-        self.white.session.game = None
-        self.black.session.game = None
+        # tolerant of a double free (e.g. a disconnect result() followed
+        # by a resign/PW result()): session.game may already be None
+        if self.white.session.game is self:
+            self.white.session.game = None
+        if self.black.session.game is self:
+            self.black.session.game = None
 
     '''def __getitem__(self, key):
         """ Used to make game objects subscriptable, so they can
