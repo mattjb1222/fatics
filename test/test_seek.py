@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 import time
 
@@ -86,9 +86,9 @@ class TestSeek(Test):
         self.expect('Your seek matches one posted by GuestEFGH.', t)
 
         self.expect('Creating:', t)
-        self.expect('unrated standard crazyhouse 15 5', t)
+        self.expect('unrated crazyhouse 15 5', t)
         self.expect('Creating:', t2)
-        self.expect('unrated standard crazyhouse 15 5', t2)
+        self.expect('unrated crazyhouse 15 5', t2)
 
         self.close(t)
         self.close(t2)
@@ -288,7 +288,7 @@ class TestSeek(Test):
         t2.write('play %d\n' % n1)
         self.expect('Issuing match request since the seek was set to manual.', t2)
 
-        self.expect('Challenge: GuestEFGH (++++) [black] GuestABCD (++++) unrated slow 90 5', t)
+        self.expect('Challenge: GuestEFGH (++++) [black] GuestABCD (++++) unrated 90 5', t)
 
         t2.write('play %d\n' % n1)
         self.expect('Issuing match request since the seek was set to manual.', t2)
@@ -328,7 +328,7 @@ class TestSeek(Test):
         t.write('seek\n')
         m = self.expect_re(r'Your seek has been posted with index (\d+).', t)
         n2 = int(m.group(1))
-        self.assert_(n2 <= n1)
+        self.assertTrue(n2 <= n1)
         self.close(t)
 
     @with_player('testplayer')
@@ -415,7 +415,7 @@ class TestPlay(Test):
         self.expect('Creating: TestPlayer (----) admin (----) rated blitz 3 0', t2)
 
         t2.write('d4\n')
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 TestPlayer admin -1 3 0 39 39 180 180 1 P/d2-d4 (0:00) d4 0 0 0\r\n', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 TestPlayer admin -1 3 0 39 39 180 180 1 P/d2-d4 (0:00) d4 0 1 0\r\n', t2)
 
         t.write('abo\n')
         self.expect('aborted on move 1', t)
@@ -447,8 +447,8 @@ class TestPlay(Test):
         self.expect('Your seek %d has been removed.' % n2, t)
 
         t2.write('play admin\n')
-        self.expect('Creating: TestPlayer (----) admin (----) rated lightning crazyhouse 1 0', t)
-        self.expect('Creating: TestPlayer (----) admin (----) rated lightning crazyhouse 1 0', t2)
+        self.expect('Creating: TestPlayer (----) admin (----) rated crazyhouse 1 0', t)
+        self.expect('Creating: TestPlayer (----) admin (----) rated crazyhouse 1 0', t2)
 
         t.write('abo\n')
         self.expect('aborted on move 1', t)

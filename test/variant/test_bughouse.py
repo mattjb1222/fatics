@@ -16,8 +16,9 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test.test import *
+from fat_tests.test import *
 from bpgn import Bpgn
+import re
 
 class TestBughouseMatch(Test):
     def test_match(self):
@@ -69,12 +70,12 @@ class TestBughouseMatch(Test):
         self.expect('You cannot challenge your own partner for bughouse.', t)
 
         t.write('match guestijkl bughouse 3+0\n')
-        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t)
-        self.expect('Your bughouse partner issues: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Challenge: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t3)
-        self.expect('Your bughouse partner was challenged: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t4)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t4)
+        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t)
+        self.expect('Your bughouse partner issues: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t2)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t2)
+        self.expect('Challenge: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t3)
+        self.expect('Your bughouse partner was challenged: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t4)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t4)
 
         self.close(t)
         self.close(t2)
@@ -107,7 +108,7 @@ class TestBughouseMatch(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0\n')
-        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t)
+        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t)
 
         t5 = self.connect_as_admin()
         t5.write('match guestmnop 1+0\n')
@@ -155,7 +156,7 @@ class TestBughouseMatch(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0\n')
-        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t)
+        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t)
 
         t3.write('ex\n')
         self.expect('Starting a game in examine (scratch) mode', t3)
@@ -201,7 +202,7 @@ class TestBughouseMatch(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0\n')
-        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t)
+        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t)
 
         t5 = self.connect_as_admin()
         t5.write('match guestefgh 1+0\n')
@@ -246,7 +247,7 @@ class TestBughouseMatch(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0\n')
-        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t)
+        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t)
 
         t5 = self.connect_as_admin()
         t5.write('match guestabcd 1+0\n')
@@ -299,12 +300,12 @@ class TestBughouseKibitz(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0\n')
-        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t)
-        self.expect('Your bughouse partner issues: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Challenge: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t3)
-        self.expect('Your bughouse partner was challenged: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t4)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t4)
+        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t)
+        self.expect('Your bughouse partner issues: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t2)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t2)
+        self.expect('Challenge: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t3)
+        self.expect('Your bughouse partner was challenged: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t4)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t4)
 
         t3.write('match guestabcd bughouse 3+0\n') # intercept
         self.expect('Creating:', t)
@@ -358,12 +359,12 @@ class TestBughouseKibitz(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0\n')
-        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t)
-        self.expect('Your bughouse partner issues: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Challenge: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t3)
-        self.expect('Your bughouse partner was challenged: GuestABCD (++++) GuestIJKL (++++) unrated blitz bughouse 3 0', t4)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t4)
+        self.expect('Issuing: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t)
+        self.expect('Your bughouse partner issues: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t2)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t2)
+        self.expect('Challenge: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t3)
+        self.expect('Your bughouse partner was challenged: GuestABCD (++++) GuestIJKL (++++) unrated bughouse 3 0', t4)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t4)
 
         t3.write('match guestabcd bughouse 3+0\n') # intercept
         self.expect('Creating:', t)
@@ -377,7 +378,9 @@ class TestBughouseKibitz(Test):
 
         t3.write('whi this is a test\n')
         self.expect('GuestIJKL(U)(++++)[1] whispers: this is a test', t5)
-        self.expect('(whispered to 1 player)', t3)
+        # bughouse partners auto-follow each other, so the other three
+        # players are observers of this board and receive the whisper too
+        self.expect('(whispered to 4 players)', t3)
 
         self.close(t5)
 
@@ -412,12 +415,12 @@ class TestBughouseKibitz(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0 w\n')
-        self.expect('Issuing: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t)
-        self.expect('Your bughouse partner issues: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Challenge: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t3)
-        self.expect('Your bughouse partner was challenged: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t4)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t4)
+        self.expect('Issuing: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t)
+        self.expect('Your bughouse partner issues: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t2)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t2)
+        self.expect('Challenge: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t3)
+        self.expect('Your bughouse partner was challenged: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t4)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t4)
 
         t3.write('a\n')
         self.expect('Creating:', t)
@@ -462,12 +465,12 @@ class TestBughouseKibitz(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0 w\n')
-        self.expect('Issuing: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t)
-        self.expect('Your bughouse partner issues: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Challenge: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t3)
-        self.expect('Your bughouse partner was challenged: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t4)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t4)
+        self.expect('Issuing: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t)
+        self.expect('Your bughouse partner issues: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t2)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t2)
+        self.expect('Challenge: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t3)
+        self.expect('Your bughouse partner was challenged: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t4)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t4)
 
         t3.write('a\n')
         self.expect('Creating:', t)
@@ -512,12 +515,12 @@ class TestBughouseKibitz(Test):
         self.expect('GuestMNOP accepts', t3)
 
         t.write('match guestijkl bughouse 3+0 w\n')
-        self.expect('Issuing: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t)
-        self.expect('Your bughouse partner issues: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t2)
-        self.expect('Challenge: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t3)
-        self.expect('Your bughouse partner was challenged: GuestABCD (++++) [white] GuestIJKL (++++) unrated blitz bughouse 3 0', t4)
-        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated blitz bughouse 3 0', t4)
+        self.expect('Issuing: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t)
+        self.expect('Your bughouse partner issues: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t2)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t2)
+        self.expect('Challenge: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t3)
+        self.expect('Your bughouse partner was challenged: GuestABCD (++++) [white] GuestIJKL (++++) unrated bughouse 3 0', t4)
+        self.expect('Your game will be: GuestEFGH (++++) GuestMNOP (++++) unrated bughouse 3 0', t4)
 
         t3.write('a\n')
         self.expect('Creating:', t)
@@ -568,8 +571,12 @@ class TestBpgn(Test):
 
         bpgn = Bpgn(f)
         for g in bpgn:
-            print 'game %s' % g
-            t.write('match GuestIJKL bughouse white 1+0\n')
+            print('game %s' % g)
+            # drain stale style-12 board lines from the previous game so
+            # the expects below can't match them
+            for c in (t, t2, t3, t4):
+                c.read_until('zz-not-there', 0.3)
+            t.write('match GuestIJKL bughouse white 1000+0\n')
             self.expect('Issuing:', t)
             self.expect('Challenge:', t3)
             t3.write('accept\n')
@@ -579,24 +586,13 @@ class TestBpgn(Test):
             self.expect('<12> ', t4)
 
             # board A is t vs. t3; board B is t2 vs. t4
-            for mv in g.moves:
-                #print '%s. %s' % (mv.char, mv.text)
-                if mv.char == 'A':
-                    t.write('%s%s\n' % (mv.text, mv.decorator))
-                    self.expect('<12> ', t)
-                    self.expect('<12> ', t3)
-                elif mv.char == 'B':
-                    t4.write('%s%s\n' % (mv.text, mv.decorator))
-                    self.expect('<12> ', t2)
-                    self.expect('<12> ', t4)
-                elif mv.char == 'a':
-                    t3.write('%s%s\n' % (mv.text, mv.decorator))
-                    self.expect('<12> ', t)
-                    self.expect('<12> ', t3)
-                elif mv.char == 'b':
-                    t2.write('%s%s\n' % (mv.text, mv.decorator))
-                    self.expect('<12> ', t2)
-                    self.expect('<12> ', t4)
+            # wait for each move's unique echo (the last-move field in the
+            # style-12 line) before sending the next one; a bare '<12>'
+            # match can hit a stale board line and let the test race ahead
+            for mi, mv in enumerate(g.moves):
+                conn = {'A': t, 'B': t4, 'a': t3, 'b': t2}[mv.char]
+                conn.write('%s%s\n' % (mv.text, mv.decorator))
+                self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv.text), conn, timeout=10)
 
             if g.is_checkmate:
                 assert(g.mated)
@@ -677,7 +673,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -686,6 +682,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
 
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
+
         moves = ['e4', 'f5', 'h4', 'g5', 'Qh5']
         wtm = True
         for mv in moves:
@@ -693,11 +694,15 @@ class TestBughouseRules(Test):
                 t.write('%s\n' % mv)
             else:
                 t3.write('%s\n' % mv)
-            self.expect('<12> ', t)
-            self.expect('<12> ', t3)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t3, timeout=10)
             wtm = not wtm
 
         self.expect_not('mated', t)
+
+        # drain stale board lines from the other board before phase 2
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         wtm = True
         moves2 = ['f4', 'e5', 'g4', 'Qh4#']
@@ -706,8 +711,8 @@ class TestBughouseRules(Test):
                 t4.write('%s\n' % mv)
             else:
                 t2.write('%s\n' % mv)
-            self.expect('<12> ', t2)
-            self.expect('<12> ', t4)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t2, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t4, timeout=10)
             wtm = not wtm
 
         self.expect(' (GuestABCD vs. GuestIJKL) GuestIJKL and GuestMNOP checkmated} 1-0', t)
@@ -745,7 +750,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -754,6 +759,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
 
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
+
         moves = ['e4', 'e5', 'Qh5', 'Nc6', 'Bc4', 'Nf6', 'Qxf7#']
         wtm = True
         for mv in moves:
@@ -761,8 +771,8 @@ class TestBughouseRules(Test):
                 t.write('%s\n' % mv)
             else:
                 t3.write('%s\n' % mv)
-            self.expect('<12> ', t)
-            self.expect('<12> ', t3)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t3, timeout=10)
             wtm = not wtm
 
         self.expect(' (GuestABCD vs. GuestIJKL) GuestIJKL checkmated} 1-0', t)
@@ -800,7 +810,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -809,6 +819,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
 
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
+
         moves = ['e4', 'f5', 'h4', 'g5', 'Qh5']
         wtm = True
         for mv in moves:
@@ -816,11 +831,15 @@ class TestBughouseRules(Test):
                 t.write('%s\n' % mv)
             else:
                 t3.write('%s\n' % mv)
-            self.expect('<12> ', t)
-            self.expect('<12> ', t3)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t3, timeout=10)
             wtm = not wtm
 
         self.expect_not('mated', t)
+
+        # drain stale board lines from the other board before phase 2
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         wtm = True
         for mv in moves:
@@ -828,8 +847,8 @@ class TestBughouseRules(Test):
                 t4.write('%s\n' % mv)
             else:
                 t2.write('%s\n' % mv)
-            self.expect('<12> ', t2)
-            self.expect('<12> ', t4)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t2, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t4, timeout=10)
             wtm = not wtm
 
         self.expect(' (GuestABCD vs. GuestIJKL) Game drawn by mate on both boards} 1/2-1/2', t)
@@ -867,7 +886,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -875,6 +894,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t2)
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
+
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         t.write('res\n')
 
@@ -913,7 +937,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -921,6 +945,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t2)
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
+
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         t2.write('res\n')
 
@@ -959,7 +988,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -967,6 +996,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t2)
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
+
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         t2.write('draw\n')
         self.expect('GuestEFGH offers a draw.', t4)
@@ -1007,7 +1041,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -1015,6 +1049,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t2)
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
+
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         # by Sam Loyd
         moves = ['d4', 'd6', 'Qd2', 'e5', 'a4', 'e4', 'Qf4', 'f5', 'h3',
@@ -1026,11 +1065,15 @@ class TestBughouseRules(Test):
                 t.write('%s\n' % mv)
             else:
                 t3.write('%s\n' % mv)
-            self.expect('<12> ', t)
-            self.expect('<12> ', t3)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t3, timeout=10)
             wtm = not wtm
 
         self.expect_not('mated', t)
+
+        # drain stale board lines from the other board before phase 2
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         wtm = True
         for mv in moves:
@@ -1038,8 +1081,8 @@ class TestBughouseRules(Test):
                 t4.write('%s\n' % mv)
             else:
                 t2.write('%s\n' % mv)
-            self.expect('<12> ', t2)
-            self.expect('<12> ', t4)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t2, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t4, timeout=10)
             wtm = not wtm
 
         self.expect(' (GuestABCD vs. GuestIJKL) Game drawn by stalemate} 1/2-1/2', t)
@@ -1077,7 +1120,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -1085,6 +1128,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t2)
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
+
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         # by Sam Loyd
         moves = ['d4', 'd6', 'Qd2', 'e5', 'a4', 'e4', 'Qf4', 'f5', 'h3',
@@ -1096,11 +1144,15 @@ class TestBughouseRules(Test):
                 t.write('%s\n' % mv)
             else:
                 t3.write('%s\n' % mv)
-            self.expect('<12> ', t)
-            self.expect('<12> ', t3)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t3, timeout=10)
             wtm = not wtm
 
         self.expect_not('mated', t)
+
+        # drain stale board lines from the other board before phase 2
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         moves2 = ['e4', 'f5', 'h4', 'g5', 'Qh5']
         wtm = True
@@ -1109,8 +1161,8 @@ class TestBughouseRules(Test):
                 t4.write('%s\n' % mv)
             else:
                 t2.write('%s\n' % mv)
-            self.expect('<12> ', t2)
-            self.expect('<12> ', t4)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t2, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t4, timeout=10)
             wtm = not wtm
 
         self.expect(" (GuestABCD vs. GuestIJKL) GuestIJKL's partner won} 0-1", t)
@@ -1148,7 +1200,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -1157,6 +1209,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
 
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
+
         moves = ['f4', 'e5', 'g4', 'Qh4#']
         wtm = True
         for mv in moves:
@@ -1164,11 +1221,15 @@ class TestBughouseRules(Test):
                 t.write('%s\n' % mv)
             else:
                 t3.write('%s\n' % mv)
-            self.expect('<12> ', t)
-            self.expect('<12> ', t3)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t3, timeout=10)
             wtm = not wtm
 
         self.expect_not('mated', t)
+
+        # drain stale board lines from the other board before phase 2
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         # by Sam Loyd
         moves2 = ['d4', 'd6', 'Qd2', 'e5', 'a4', 'e4', 'Qf4', 'f5', 'h3',
@@ -1180,8 +1241,8 @@ class TestBughouseRules(Test):
                 t4.write('%s\n' % mv)
             else:
                 t2.write('%s\n' % mv)
-            self.expect('<12> ', t2)
-            self.expect('<12> ', t4)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t2, timeout=10)
+            self.expect_re(r'\(\d+\s*:\s*\d+\)?\)\s*%s[+#]?(?:\s|$)' % re.escape(mv), t4, timeout=10)
             wtm = not wtm
 
         self.expect(" (GuestABCD vs. GuestIJKL) GuestABCD checkmated} 0-1", t)
@@ -1219,7 +1280,7 @@ class TestBughouseRules(Test):
         t4.write('a\n')
         self.expect('GuestMNOP accepts', t3)
 
-        t.write('match GuestIJKL bughouse white 1+0\n')
+        t.write('match GuestIJKL bughouse white 1000+0\n')
         self.expect('Issuing:', t)
         self.expect('Challenge:', t3)
         t3.write('accept\n')
@@ -1227,6 +1288,11 @@ class TestBughouseRules(Test):
         self.expect('<12> ', t2)
         self.expect('<12> ', t3)
         self.expect('<12> ', t4)
+
+        # drain the stale partner-board style-12 lines (partners auto-follow
+        # each other, so each connection receives two initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
 
         t.write('e4\n')
         self.expect('<12> ', t)

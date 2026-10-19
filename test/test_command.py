@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestCommand(Test):
     def test_command(self):

@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test.test import *
+from fat_tests.test import *
 
 import random
 
@@ -62,7 +62,9 @@ class TestChess960(Test):
         t = self.connect_as_admin()
         self.set_style_12(t)
         t.write('exl\n')
-        self.expect('<12> qbbnrnkr pppppppp -------- -------- -------- -------- PPPPPPPP QBBNRNKR W -1 1 1 1 1 0 1 admin admin 2 0 0 39 39 0 0 1 none (0:00) none 0 0 0', t)
+        # exact strings can't be used here: the clock ticks and the
+        # game name/clock fields vary, so match the board + flags
+        self.expect_re(r'<12> qbbnrnkr pppppppp (-------- ){4}PPPPPPPP QBBNRNKR W -1 1 1 1 1 0 1 \S+ \S+ \d+ \d+ \d+ 39 39 \d+ \d+ \d+ none \(0:00\) none 0 0 0', t)
         t.write('forward 9999\n')
         self.expect('admin goes forward 9999', t)
         self.expect('admin checkmated 1-0', t)
@@ -88,8 +90,8 @@ class TestChess960(Test):
         t.write('match admin white 1 0 fr idn=404\n')
         self.expect('Challenge:', t2)
         t2.write('a\n')
-        self.expect('<12> rbbqnnkr pppppppp -------- -------- -------- -------- PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 GuestABCD admin 1 1 0 39 39 60 60 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rbbqnnkr pppppppp -------- -------- -------- -------- PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 GuestABCD admin -1 1 0 39 39 60 60 1 none (0:00) none 1 0 0', t2)
+        self.expect_re(r'<12> rbbqnnkr pppppppp (-------- ){4}PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 GuestABCD admin 1 1 0 39 39 \d+ \d+ \d+ none \(0:00\) none 0 \d 0', t)
+        self.expect_re(r'<12> rbbqnnkr pppppppp (-------- ){4}PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 GuestABCD admin -1 1 0 39 39 \d+ \d+ \d+ none \(0:00\) none 1 \d 0', t2)
         t.write('res\n')
         self.expect('GuestABCD resigns} 0-1', t)
         self.expect('GuestABCD resigns} 0-1', t2)
@@ -97,8 +99,8 @@ class TestChess960(Test):
         t.write('rem\n')
         self.expect('Challenge:', t2)
         t2.write('a\n')
-        self.expect('<12> rbbqnnkr pppppppp -------- -------- -------- -------- PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 admin GuestABCD -1 1 0 39 39 60 60 1 none (0:00) none 1 0 0', t)
-        self.expect('<12> rbbqnnkr pppppppp -------- -------- -------- -------- PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 admin GuestABCD 1 1 0 39 39 60 60 1 none (0:00) none 0 0 0', t2)
+        self.expect_re(r'<12> rbbqnnkr pppppppp (-------- ){4}PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 admin GuestABCD -1 1 0 39 39 \d+ \d+ \d+ none \(0:00\) none 1 \d 0', t)
+        self.expect_re(r'<12> rbbqnnkr pppppppp (-------- ){4}PPPPPPPP RBBQNNKR W -1 1 1 1 1 0 1 admin GuestABCD 1 1 0 39 39 \d+ \d+ \d+ none \(0:00\) none 0 \d 0', t2)
         t.write('res\n')
         self.expect('GuestABCD resigns} 1-0', t)
         self.expect('GuestABCD resigns} 1-0', t2)
@@ -170,11 +172,11 @@ class TestPgn(Test):
 
         pgn = Pgn(f)
         for g in pgn:
-            print 'game %s' % g
+            print('game %s' % g)
             assert(g.tags['FEN'])
             idn = db.idn_from_fen(g.tags['FEN'])
             if idn is None:
-                print('could not get idn for fen %s' % g.tags['FEN'])
+                print(('could not get idn for fen %s' % g.tags['FEN']))
                 assert(False)
             t.write('match GuestEFGH white 5 0 chess960 idn=%d\n' % idn)
             self.expect('Issuing:', t)

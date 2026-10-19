@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 import time
 
@@ -140,9 +140,9 @@ class TestUserAlias(Test):
         t.write('fi\n')
         self.expect('Idle: 0 seconds', t)
         time.sleep(2)
-        t.write('$fi\n')
-        m = self.expect_re(r'Idle: (\d) seconds', t)
-        self.assert_(m.group(1) > 1)
+        t.write('$$fi\n')
+        m = self.expect_re(r'Idle: (\d+) seconds', t)
+        self.assertTrue(int(m.group(1)) > 1)
         self.close(t)
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

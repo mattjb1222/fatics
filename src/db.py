@@ -16,6 +16,8 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
+
 from MySQLdb import connect, cursors, IntegrityError, OperationalError
 from config import config
 
@@ -30,7 +32,7 @@ class DB(object):
 
     def connect(self):
         self.db = connect(host=config.db_host, db=config.db_db,
-            read_default_file="~/.my.cnf")
+            read_default_file=os.path.expanduser("~/.my.cnf"))
         cursor = self.db.cursor()
         cursor = self.query(cursor, """SET time_zone='+00:00'""")
         # Increase the default connection timeout
@@ -41,6 +43,11 @@ class DB(object):
         cursor.close()
 
     def query(self, cursor, *args):
+        # py3 mysqlclient requires an iterable for args; old MySQLdb
+        # accepted bare scalars, so normalize them here.
+        if len(args) > 1 and args[1] is not None \
+                and not isinstance(args[1], (tuple, list, dict)):
+            args = (args[0], (args[1],))
         try:
             cursor.execute(*args)
             return cursor

@@ -23,7 +23,7 @@ import time
 
 import time_format
 
-from command import ics_command, Command
+from .command import ics_command, Command
 
 from server import server
 

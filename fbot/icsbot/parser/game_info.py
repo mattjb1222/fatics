@@ -25,7 +25,7 @@ def style12(data):
     
     All times in seconds. The function does work for (iset) ms=1 and 0 the same.
     """
-    if type(data) is str or type(data) is unicode:
+    if type(data) is str or type(data) is str:
         matches = _regex.STYLE12_re.match(data)
     else:
         matches = data
@@ -42,7 +42,7 @@ def style12(data):
     r = re.compile('(-+)')
 
     l = r.split(fen)
-    for i in xrange(1, len(l),2):
+    for i in range(1, len(l),2):
         l[i] = str(len(l[i]))
     fen = ''.join(l)
     
@@ -100,7 +100,7 @@ def style12(data):
     
     spam = d['move_time'].split(':')[::-1]
     d['move_time'] = 0
-    for i in xrange(len(spam)):
+    for i in range(len(spam)):
         d['move_time'] += float(spam[i]) * 60**i
     
     d['game'] = int(d['game'])
@@ -123,7 +123,7 @@ def style12(data):
     elif d['relation'] == '1':
         d['relation'] = ('playing', 'my move')
     else:
-        print 'Warning: unknown game relation'
+        print('Warning: unknown game relation')
         d['relation'] = ('unknown',)
     
     return d

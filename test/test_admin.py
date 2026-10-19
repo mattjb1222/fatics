@@ -17,7 +17,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class CommandTest(Test):
     def test_addplayer_and_remplayer(self):
@@ -42,7 +42,7 @@ class CommandTest(Test):
 
         t.write("announce This is a test announcement; please ignore. ♟\n")
         m = self.expect_re(r'\((\d+)\) \*\*ANNOUNCEMENT\*\* from admin: This is a test announcement; please ignore. ♟', t)
-        self.assert_(m.group(1) >= 1)
+        self.assertTrue(int(m.group(1)) >= 1)
         self.expect('**ANNOUNCEMENT** from admin: This is a test announcement; please ignore. ♟', t2)
         self.close(t)
         self.close(t2)
@@ -56,7 +56,7 @@ class CommandTest(Test):
 
         t.write("annunreg Test please ignore\n")
         m = self.expect_re(r'\((\d+)\) \*\*UNREG ANNOUNCEMENT\*\* from admin: Test please ignore', t)
-        self.assert_(m.group(1) >= 2)
+        self.assertTrue(int(m.group(1)) >= 2)
         self.expect('**UNREG ANNOUNCEMENT** from admin: Test please ignore', t2)
         self.expect('**UNREG ANNOUNCEMENT** from admin: Test please ignore', t3)
         self.expect_not('**UNREG ANNOUNCEMENT**', t4)

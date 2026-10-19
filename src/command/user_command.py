@@ -27,7 +27,7 @@ import game
 import history
 import time_format
 
-from command import ics_command, Command
+from .command import ics_command, Command
 from command_parser import BadCommandError
 from db import db
 
@@ -101,7 +101,7 @@ class Finger(Command):
             if len(notes) > 0:
                 conn.write('\n')
                 prev_max = 0
-                for (num, txt) in sorted(notes.iteritems()):
+                for (num, txt) in sorted(notes.items()):
                     num = int(num)
                     assert(num >= prev_max + 1)
                     assert(num <= 10)

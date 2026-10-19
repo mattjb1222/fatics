@@ -40,7 +40,7 @@ class PrivateTells(object):
         self._icsbot = icsbot
         self._users = self._icsbot['users']
         
-        import misc.regex as reg
+        from .misc import regex as reg
         
         regex = '^(?P<handle>%s)(?P<tags>%s)? tells you: (?P<message>.*)$' % (reg.HANDLE, reg.TAGS)
         self._icsbot.reg_comm(regex, self)
@@ -70,7 +70,7 @@ class PrivateTells(object):
         #    return self.qtell.split(usr, 'A command must be more then one character long.')
         
         matches = []
-        for (c, v) in self._registered.items():
+        for (c, v) in list(self._registered.items()):
             f, p = v
             if c.startswith(comm) and p(usr, tags):
                 if c == comm:
@@ -110,7 +110,7 @@ class PrivateTells(object):
     def _listcommands(self, usr, args, tags):
         """=commands lists all commands available to you."""
         commands = []
-        for (c, v) in self._registered.items():
+        for (c, v) in list(self._registered.items()):
             f, p = v
             if p(usr, tags):
                 commands += [c]    

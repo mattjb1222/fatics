@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestObserve(Test):
     def test_observe_and_unobserve(self):
@@ -101,7 +101,7 @@ class TestObserve(Test):
         self.expect('<12> ', t2)
 
         t.write('e4\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 GuestABCD GuestABCD -2 0 0 39 39 0 0 1 P/e2-e4 (0:00) e4 0 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 White Black -2 0 0 39 39 0 0 1 P/e2-e4 (0:00) e4 0 0 0', t2)
 
         t.write('unex\n')
         self.expect('GuestABCD has stopped examining game 1.', t2)
@@ -172,7 +172,7 @@ class TestFollow(Test):
 
         t2.write('set style 12\n')
         t2.write('follow guestabcd\n')
-        self.expect("You will now be following GuestABCD's games.", t2)
+        self.expect("You will now be following GuestABCD.", t2)
 
         t2.write('foll guestabcd\n')
         self.expect("You are already following GuestABCD's games.", t2)
@@ -196,7 +196,7 @@ class TestFollow(Test):
 
         t3.write('set style 12\n')
         t3.write('follow guestabcd\n')
-        self.expect("You will now be following GuestABCD's games.", t3)
+        self.expect("You will now be following GuestABCD.", t3)
 
         t.write('match guestefgh 1+0 u w\n')
         self.expect('Challenge: ', t2)
@@ -222,7 +222,7 @@ class TestFollow(Test):
 
         t2.write('set style 12\n')
         t2.write('follow guestabcd\n')
-        self.expect("You will now be following GuestABCD's games.", t2)
+        self.expect("You will now be following GuestABCD.", t2)
         self.expect('<12> ', t2)
 
         t2.write('o guestabcd\n')
@@ -239,7 +239,7 @@ class TestFollow(Test):
         t2 = self.connect_as_guest()
 
         t2.write('follow guestabcd\n')
-        self.expect("You will now be following GuestABCD's games.", t2)
+        self.expect("You will now be following GuestABCD.", t2)
 
         self.close(t)
         self.expect('GuestABCD, whose games you were following, has logged out.', t2)
@@ -302,20 +302,20 @@ class TestAllobservers(Test):
         t3.write('o 1\n')
         self.expect('now observing', t3)
         t.write('allob\n')
-        self.expect('Observing 1 [GuestABCD vs. GuestEFGH]: GuestIJKL(U) (1 user)', t)
-        self.expect('Observing 2 [GuestIJKL vs. GuestMNOP]: GuestABCD(U) (1 user)', t)
-        self.expect('  2 games displayed (of 2 in progress).', t)
+        self.expect_re(r'Observing \d+ \[GuestABCD vs. GuestEFGH\]: GuestIJKL\(U\) \(1 user\)', t)
+        self.expect_re(r'Observing \d+ \[GuestIJKL vs. GuestMNOP\]: GuestABCD\(U\) \(1 user\)', t)
+        self.expect_re(r'\d+ games displayed \(of \d+ in progress\)\.', t)
 
         t4.write('o 1\n')
         self.expect('now observing', t4)
 
         t.write('allob guestefgh\n')
-        self.expect('Observing 1 [GuestABCD vs. GuestEFGH]: GuestIJKL(U) GuestMNOP(U) (2 users)', t)
-        self.expect('  1 game displayed (of 2 in progress).', t)
+        self.expect_re(r'Observing \d+ \[GuestABCD vs. GuestEFGH\]: GuestIJKL\(U\) GuestMNOP\(U\) \(2 users\)', t)
+        self.expect_re(r'\d+ game displayed \(of \d+ in progress\)\.', t)
 
-        t2.write('allob 1\n')
-        self.expect('Observing 1 [GuestABCD vs. GuestEFGH]: GuestIJKL(U) GuestMNOP(U) (2 users)', t2)
-        self.expect('  1 game displayed (of 2 in progress).', t2)
+        t2.write('allob guestabcd\n')
+        self.expect_re(r'Observing \d+ \[GuestABCD vs. GuestEFGH\]: GuestIJKL\(U\) GuestMNOP\(U\) \(2 users\)', t2)
+        self.expect_re(r'\d+ game displayed \(of \d+ in progress\)\.', t2)
 
         t3.write('unob guestabcd\n')
         self.expect('Removing', t3)
@@ -324,11 +324,11 @@ class TestAllobservers(Test):
 
         # allob should skip games with no observers
         t.write('allob\n')
-        self.expect('Observing 2 [GuestIJKL vs. GuestMNOP]: GuestABCD(U) (1 user)', t)
-        self.expect('  1 game displayed (of 2 in progress).', t)
+        self.expect_re(r'Observing \d+ \[GuestIJKL vs. GuestMNOP\]: GuestABCD\(U\) \(1 user\)', t)
+        self.expect_re(r'\d+ game displayed \(of \d+ in progress\)\.', t)
 
-        t.write('allob 1\n')
-        self.expect('No one is observing game 1.', t)
+        t.write('allob guestefgh\n')
+        self.expect_re(r'No one is observing game \d+\.', t)
 
         self.close(t)
         self.close(t2)

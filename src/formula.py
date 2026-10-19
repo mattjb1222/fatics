@@ -118,6 +118,9 @@ class LTSymbol(Symbol):
     lbp = 60
     def led(self, left):
         right = expression(60)
+        if left is None or right is None:
+            # python 2 semantics: None compares less than everything
+            return False
         return left < right
 
 @Token(['<=', '=<'])
@@ -125,6 +128,11 @@ class LTESymbol(Symbol):
     lbp = 60
     def led(self, left):
         right = expression(60)
+        if left is None and right is None:
+            return True
+        if left is None or right is None:
+            # python 2 semantics: None compares less than everything
+            return False
         return left <= right
 
 @Token(['>'])
@@ -132,6 +140,9 @@ class GTSymbol(Symbol):
     lbp = 60
     def led(self, left):
         right = expression(60)
+        if left is None or right is None:
+            # python 2 semantics: None compares less than everything
+            return False
         return left > right
 
 @Token(['>=', '=>'])
@@ -139,6 +150,11 @@ class GTESymbol(Symbol):
     lbp = 60
     def led(self, left):
         right = expression(60)
+        if left is None and right is None:
+            return True
+        if left is None or right is None:
+            # python 2 semantics: None compares less than everything
+            return False
         return left >= right
 
 @Token(['=', '=='])
@@ -381,7 +397,7 @@ def check_formula(chal_, s, num=0):
     global token, nextt, chal, f_num
     chal = chal_
     try:
-        nextt = tokenize(s).next
+        nextt = tokenize(s).__next__
     except StopIteration:
         raise FormulaError('got formula with no tokens')
     f_num = num
@@ -389,16 +405,16 @@ def check_formula(chal_, s, num=0):
     return expression()
 
 if __name__ == '__main__':
-    print(check_formula(None, '7 * (3 * (3 + 2) /  2) - 42 * 2'))
-    print(check_formula(None, '(2 + 5 * 5) - 1'))
-    print(check_formula(None, '(2 + 5 * 5) - 1'))
-    print(check_formula(None, '!lightning && !blitz'))
-    print(check_formula(None, '1000 <= 1500 and 1500 <= 2000'))
+    print((check_formula(None, '7 * (3 * (3 + 2) /  2) - 42 * 2')))
+    print((check_formula(None, '(2 + 5 * 5) - 1')))
+    print((check_formula(None, '(2 + 5 * 5) - 1')))
+    print((check_formula(None, '!lightning && !blitz')))
+    print((check_formula(None, '1000 <= 1500 and 1500 <= 2000')))
     try:
-        print(check_formula(None, '33-'))
+        print((check_formula(None, '33-')))
     except FormulaError:
         print('success')
     else:
-        print 'FAIL'
+        print('FAIL')
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 import time
 
@@ -33,7 +33,7 @@ class TestExamine(Test):
 
         t.write('examine\n')
         self.expect('Starting a game in examine (scratch) mode.', t)
-        self.expect_re(r'\<12\> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 \d+ GuestPQLQ GuestPQLQ 2 0 0 39 39 0 0 1 none \(0:00\) none 0 0 0', t)
+        self.expect_re(r'\<12\> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 \d+ White Black 2 0 0 39 39 0 0 1 none \(0:00\) none 0 0 0', t)
 
         t.write('forward\n')
         self.expect("You're at the end of the game.", t)
@@ -52,7 +52,7 @@ class TestExamine(Test):
         t.write('e2e4\n')
         # difference from fics: en passant file is -1 despite the last move
         # being a double push, since there is no legal en passant capture
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 GuestPQLQ GuestPQLQ 2 0 0 39 39 0 0 1 P/e2-e4 (0:00) e4 0 0 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 White Black 2 0 0 39 39 0 0 1 P/e2-e4 (0:00) e4 0 0 0', t)
         self.expect('GuestPQLQ moves: e4', t)
 
         t.write('forward\n')

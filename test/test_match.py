@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestMatch(Test):
     def test_match(self):
@@ -82,7 +82,7 @@ class TestMatch(Test):
 
         t2.write('match admin\n')
         self.expect('Challenge:', t)
-        self.expect('rated blitz 2 12', t)
+        self.expect('unrated 2 12', t)
 
         self.close(t)
         self.close(t2)
@@ -96,7 +96,7 @@ class TestMatch(Test):
 
         t2.write('match admin 3 0 R cRaZyHousE\n')
         self.expect('Challenge:', t)
-        self.expect('rated blitz crazyhouse 3 0', t)
+        self.expect('rated crazyhouse 3 0', t)
 
         self.close(t)
         self.close(t2)
@@ -107,7 +107,7 @@ class TestMatch(Test):
         t2 = self.connect_as_guest('GuestABCD')
 
         t2.write('match admin 3+1 white\n')
-        self.expect('Challenge: GuestABCD (++++) [white] admin (----) unrated blitz 3 1', t)
+        self.expect('Challenge: GuestABCD (++++) [white] admin (----) unrated 3 1', t)
 
         self.close(t)
         self.close(t2)
@@ -406,8 +406,8 @@ class TestRmatch(Test):
         self.expect('Only TD programs', t)
 
         t3.write('rmatch testplayer admin 3 0 white r\n')
-        self.expect('Issuing: testplayer (----) [white] admin (----) rated blitz 3 0', t)
-        self.expect('Challenge: testplayer (----) [white] admin (----) rated blitz 3 0', t2)
+        self.expect('Issuing: testplayer (----) [white] admin (----) rated 3 0', t)
+        self.expect('Challenge: testplayer (----) [white] admin (----) rated 3 0', t2)
 
         t2.write('a\n')
         self.expect('Creating:', t)
@@ -437,7 +437,7 @@ class TestRematch(Test):
         self.expect('admin resigns} 0-1', t2)
 
         t.write('rematch\n')
-        self.expect('Challenge: admin (----) GuestABCD (++++) unrated lightning 1 0', t2)
+        self.expect('Challenge: admin (----) GuestABCD (++++) unrated 1 0', t2)
         t2.write('a\n')
         self.expect('Creating: ', t)
         self.expect('Creating: ', t2)
@@ -446,7 +446,7 @@ class TestRematch(Test):
         self.expect('admin resigns} 1-0', t2)
 
         t2.write('rem\n')
-        self.expect('Challenge: GuestABCD (++++) admin (----) unrated lightning 1 0', t)
+        self.expect('Challenge: GuestABCD (++++) admin (----) unrated 1 0', t)
         t.write('a\n')
         self.expect('Creating: ', t)
         self.expect('Creating: ', t2)

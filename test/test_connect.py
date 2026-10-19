@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import  *
+from .test import  *
 
 import time
 
@@ -148,7 +148,7 @@ class LogoutTest(Test):
 
         t2.write('who\n')
         m = self.expect_re('(\d) player', t2)
-        self.assert_(int(m.group(1)) == count - 1)
+        self.assertTrue(int(m.group(1)) == count - 1)
         self.close(t2)
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

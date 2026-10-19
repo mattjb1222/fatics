@@ -229,7 +229,7 @@ class PgnGame(object):
                 i = m.end()
                 continue
 
-            print('match %r' % move_num_re.match(s, i))
+            print(('match %r' % move_num_re.match(s, i)))
             raise PgnError('unrecognized sytax in pgn: "%s", i %d' % (s[i:i+15], i))
 
     def __str__(self):

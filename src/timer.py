@@ -46,7 +46,7 @@ def heartbeat():
             u.session.ping()
 
     # forfeit games on time
-    for g in game.games.values():
+    for g in list(game.games.values()):
         if g.gtype == game.PLAYED and g.clock.is_ticking:
             u = g.get_user_to_move()
             opp = g.get_opp(u)

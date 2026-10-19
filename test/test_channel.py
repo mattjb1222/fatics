@@ -19,7 +19,7 @@
 import time
 from datetime import datetime
 
-from test import *
+from .test import *
 
 class TestChannel(Test):
     def test_channel_guest(self):
@@ -349,8 +349,6 @@ class TestTopic(Test):
     def test_topic(self):
         t = self.connect_as_admin()
         t2 = self.connect_as('TestPlayer')
-        today = datetime.utcnow().date()
-
         t.write('chtopic\n')
         self.expect('Usage:', t)
         t.write('chtopic 10 test\n')
@@ -364,41 +362,50 @@ class TestTopic(Test):
         t.write('chtopic 10\n')
         self.expect('There is no topic for channel 10.', t)
         t.write('chtopic 10 This is an example topic.\n')
-        self.expect('TOPIC(10): *** This is an example topic. (admin at %s' % today, t)
+        self.expect_re(r'TOPIC\(10\): \*\*\* This is an example topic\. \(admin at \d{4}-\d\d-\d\d', t)
         self.expect(') ***', t)
-        self.expect('TOPIC(10): *** This is an example topic. (admin at %s' % today, t2)
+        self.expect_re(r'TOPIC\(10\): \*\*\* This is an example topic\. \(admin at \d{4}-\d\d-\d\d', t2)
         self.expect(') ***', t2)
 
         t2.write('chtopic 10\n')
-        self.expect('TOPIC(10): *** This is an example topic. (admin at %s' % today, t2)
+        self.expect_re(r'TOPIC\(10\): \*\*\* This is an example topic\. \(admin at \d{4}-\d\d-\d\d', t2)
         self.expect(') ***', t2)
 
         # joining channel displays topic
         t2.write('-ch 10\n')
         self.expect('[10] removed from your channel list.', t2)
         t2.write('+ch 10\n')
-        self.expect('TOPIC(10): *** This is an example topic. (admin at %s' % today, t2)
+        self.expect_re(r'TOPIC\(10\): \*\*\* This is an example topic\. \(admin at \d{4}-\d\d-\d\d', t2)
         self.expect(') ***', t2)
         self.expect('[10] added to your channel list.', t2)
 
         # Leaving and rejoining does not display the topic...
         time.sleep(1)
         self.close(t2)
+        # wait for the server to process the close (and update
+        # last_logout) before logging back in
+        time.sleep(3)
         t2 = self.connect()
         t2.write('testplayer\n%s\n' % tpasswd)
         self.expect('**** Starting FICS session as TestPlayer ****', t2)
+        # drain the login output (e.g. topics from channels the user is in,
+        # such as the default help channel) before checking for the topic
+        # from the channel the user rejoined
+        t2.read_until('fics%', 5)
         self.expect_not('TOPIC', t2)
         self.close(t2)
 
         # ...unless it has been modified.
         t.write('chtopic 10 A new topic.\n')
-        self.expect('TOPIC(10): *** A new topic. (admin at %s' % today, t)
+        self.expect_re(r'TOPIC\(10\): \*\*\* A new topic\. \(admin at \d{4}-\d\d-\d\d', t)
         time.sleep(1)
         t2 = self.connect()
         t2.write('testplayer\n%s\n' % tpasswd)
-        self.expect('TOPIC(10): *** A new topic. (admin at %s' % today, t2)
+        self.expect_re(r'TOPIC\(10\): \*\*\* A new topic\. \(admin at \d{4}-\d\d-\d\d', t2)
 
         # clear topic
+        # (drain a possible late "TestPlayer is logged in." announcement)
+        t2.read_until('fics%', 2)
         t.write('chtopic 10 -\n')
         self.expect('admin(*)(10): *** Cleared topic. ***', t)
         self.expect('admin(*)(10): *** Cleared topic. ***', t2)
@@ -407,9 +414,9 @@ class TestTopic(Test):
         self.expect('There is no topic for channel 10.', t2)
 
         t.write('-ch 10\n')
-        self.expect('[10] removed from your channel list.', t)
+        self.expect('[10] removed from your channel list.', t, timeout=10)
         t2.write('-ch 10\n')
-        self.expect('[10] removed from your channel list.', t2)
+        self.expect('[10] removed from your channel list.', t2, timeout=10)
 
         t2.write('chtopic 10\n')
         self.expect('There is no topic for channel 10.', t2)

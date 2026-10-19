@@ -65,7 +65,7 @@ class SqlData(object):
         self.dataset = dataset
         self.main_key = dataset.main_key
 
-        if type(database) is str or type(database) is unicode: 
+        if type(database) is str or type(database) is str: 
             self.db = db.connect(database)
         else:
             self.db = database
@@ -129,7 +129,7 @@ class SqlData(object):
             # We set it to None anyways, so that we don't have to worry about
             # it being loaded too often. Set items that are not yet set.
             # If it exists, we don't want to overwrite it just in case.
-            if not data_set.items.has_key(item):
+            if item not in data_set.items:
                 data_set.items[item] = None
             return
 

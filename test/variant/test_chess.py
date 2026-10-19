@@ -18,7 +18,7 @@
 
 import random
 
-from test.test import *
+from fat_tests.test import *
 
 from pgn import Pgn
 
@@ -35,7 +35,7 @@ class TestPgn(Test):
 
         pgn = Pgn(f)
         for g in pgn:
-            print 'game %s' % g
+            print('game %s' % g)
             t.write('match GuestEFGH white 1 0\n')
             self.expect('Issuing:', t)
             self.expect('Challenge:', t2)

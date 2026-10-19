@@ -45,29 +45,32 @@ class Test(unittest.TestCase):
     def expect(self, s, t, msg=None, timeout=2):
         ret = t.read_until(s, timeout)
         if s not in ret:
-            print("\ngot {{%s}}\nexp {{%s}}\n" % (repr(ret), repr(s)))
-        self.assert_(s in ret)
+            print(("\ngot {{%s}}\nexp {{%s}}\n" % (repr(ret), repr(s))))
+        self.assertTrue(s in ret)
 
     def expect_re(self, s, t, timeout=2):
-        ret = t.expect([re.compile(s)], timeout)
+        ret = t.expect([re.compile(s)], timeout=timeout)
         if ret[0] != 0:
-            print("\ngot {{%r}}\nexp {{%r}}\n" % (ret, s))
-        self.assert_(ret[0] == 0)
+            print(("\ngot {{%r}}\nexp {{%r}}\n" % (ret, s)))
+        self.assertTrue(ret[0] == 0)
         return ret[1]
 
     def expect_command_prints_nothing(self, cmd, t, timeout=0.2):
-        t.read_very_eager()
+        # Wait for the previous command's output (and its prompt) to
+        # fully arrive before testing, so a slow board/other output
+        # can't be misattributed to this (output-free) command.
+        t.read_until('fics%', 5)
         t.write(cmd)
-        ret = t.read_until('foo', timeout)
-        if ret != 'fics% ':
-            print("\ngot {{%s}}" % repr(ret))
-        self.assert_(ret == 'fics% ')
+        ret = t.read_until('fics%', 5)
+        if ret.strip() != 'fics%':
+            print(("\ngot {{%s}}" % repr(ret)))
+        self.assertTrue(ret.strip() == 'fics%')
 
     def expect_not(self, str, t):
         ret = t.read_until(str, 0.3)
         if str in ret:
-            print "got {{%s}}" % (ret + t.read_lazy())
-        self.assert_(not str in ret)
+            print("got {{%s}}" % (ret + t.read_lazy()))
+        self.assertTrue(not str in ret)
 
     def expect_EOF(self, t):
         def read_some():
@@ -96,8 +99,8 @@ class Test(unittest.TestCase):
         t.write("admin\n%s\n" % admin_passwd)
         s = t.read_until('fics% ', 5)
         if 'fics%' not in s:
-            print 'got {%s}' % s
-        self.assert_('fics% ' in s)
+            print('got {%s}' % s)
+        self.assertTrue('fics% ' in s)
         self.set_nowrap(t)
         return t
 
@@ -121,14 +124,18 @@ class Test(unittest.TestCase):
         t.write('%s\n' % passwd)
         s = t.read_until('fics% ', 5)
         if 'fics%' not in s:
-            print 'got {%s}' % s
+            print('got {%s}' % s)
         assert('fics% ' in s)
         return t
 
     def close(self, t):
         t.write('quit\n')
-        t.read_until('Thank you for using')
-        t.read_all()
+        try:
+            t.read_until('Thank you for using')
+            t.read_all()
+        except EOFError:
+            # connection already closed (e.g. player was nuked)
+            pass
         t.close()
 
     def _adduser(self, name, passwd, lists=[]):
@@ -147,9 +154,19 @@ class Test(unittest.TestCase):
     def _deluser(self, name):
         t = self.connect_as_admin()
         #t.write('nuke %s\n' % name) # in case an error prevented clean logout
-        t.write('remplayer %s\n' % name)
-        self.expect('removed', t)
+        # The user may still appear online for a moment after our side of
+        # the connection closes (the server processes the close
+        # asynchronously), so retry until the removal takes effect.
+        for attempt in range(5):
+            t.write('remplayer %s\n' % name)
+            r = t.read_until('removed', 2)
+            if 'removed' in r:
+                self.close(t)
+                return
+            time.sleep(1)
+        print('remplayer failed for %s: %r' % (name, r))
         self.close(t)
+        self.fail('remplayer %s failed: %r' % (name, r))
 
     def _skip(self, reason):
         raise unittest.SkipTest(reason)
@@ -157,24 +174,45 @@ class Test(unittest.TestCase):
     def setUp(self):
         pass
 
+    def _who_players(self, t):
+        """ Return the list of player names shown by 'who'. """
+        t.write('who\n')
+        players = []
+        # will have to be redone when 'who' output is finished
+        for _ in range(40):
+            try:
+                m = self.expect_re(r'^(.*?)\r\n', t, timeout=5)
+            except unittest.FailTest:
+                # timed out waiting for a line; re-issue 'who' and
+                # continue from the current (partial) snapshot
+                if not players:
+                    players = self._who_players(t)
+                    return players
+                break
+            line = m.group(1).strip()
+            if line == '':
+                continue
+            elif ' displayed.' in line:
+                break
+            else:
+                # lines look like "   0 GuestABCD(U)"
+                m2 = re.match(r'^(\d+)\s+(\w+)\((.*?)\)\s*$', line)
+                if m2 is not None:
+                    players.append(m2.group(2))
+        return players
+
     def _nuke_all_players(self):
         try:
             t = self.connect_as_admin()
-            t.write('who\n')
-            # will have to be redone when 'who' output is finished
-            while True:
-                m = self.expect_re(r'^(.*?)\r\n', t)
-                line = m.group(1)
-                if line == '':
-                    continue
-                elif ' displayed.' in line:
-                    break
-                else:
-                    m2 = re.match('^(\w+)(?:\(.*?\))*$', line)
-                    self.assert_(m2)
-                    name = m2.group(1)
+            for _ in range(3):
+                # nuke may not be instantaneous for players in games,
+                # so re-check and nuke again until 'who' is clean
+                players = self._who_players(t)
+                for name in players:
                     if name != 'admin':
                         t.write('nuke %s\n' % name)
+                if all(p == 'admin' for p in players):
+                    break
             self.close(t)
         except unittest.FailTest:
             # this is only called from within an exception handler, so
@@ -182,9 +220,8 @@ class Test(unittest.TestCase):
             pass
 
     def tearDown(self):
-        pass
         """ Make sure that all tests shut down cleanly. """
-        """t = self.connect_as_guest('GuestWXYZ')
+        t = self.connect_as_guest('GuestWXYZ')
         t.write('who\n')
         try:
             self.expect('1 player displayed.', t)
@@ -196,7 +233,7 @@ class Test(unittest.TestCase):
             self._nuke_all_players()
             raise
 
-        self.close(t)"""
+        self.close(t)
 
 # test decorators
 """def with_guest(f):
@@ -222,7 +259,7 @@ def with_admin(f):
 try:
     tpasswd
 except NameError:
-    tpasswd = (''.join(random.choice(string.letters + string.digits)
+    tpasswd = (''.join(random.choice(string.ascii_letters + string.digits)
         for n in range(8)))
 def with_player(pname, ptitles=[]):
     assert(isinstance (ptitles, (list, tuple)))

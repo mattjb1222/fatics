@@ -19,7 +19,7 @@
 
 import list_
 
-from command import *
+from .command import *
 
 @ics_command('addlist', 'ww',  admin.Level.user)
 class Addlist(Command):
@@ -40,7 +40,7 @@ class Addlist(Command):
 class Showlist(Command):
     def run(self, args, conn):
         if args[0] is None:
-            for c in list_.lists.itervalues():
+            for c in list_.lists.values():
                 conn.write('%s\n' % c.name)
             return
 

@@ -17,7 +17,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from command import ics_command, Command, requires_registration
+from .command import ics_command, Command, requires_registration
 
 import admin
 import channel
@@ -41,7 +41,7 @@ class Inchannel(Command):
             else:
                 conn.write("INCHANNEL USER\n")
         else:
-            for ch in channel.chlist.all.values():
+            for ch in list(channel.chlist.all.values()):
                 on = ch.get_online()
                 if len(on) > 0:
                     conn.write("%s: %s\n" % (ch.get_display_name(), ' '.join(on)))

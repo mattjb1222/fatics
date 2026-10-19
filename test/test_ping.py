@@ -18,7 +18,7 @@
 
 import time
 
-from test import *
+from .test import *
 
 # XXX this doesn't actually test ping, since we don't have a
 # way of testing through zipseal yet

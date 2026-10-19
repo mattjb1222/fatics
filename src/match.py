@@ -337,7 +337,7 @@ class Challenge(Offer, MatchStringParser):
                 self._check_open()
                 self._parse_args(args, a, b)
             except MatchError as e:
-                a.write(e[0])
+                a.write(e.args[0])
                 return
 
         # look for a matching offer from player b
@@ -408,10 +408,16 @@ class Challenge(Offer, MatchStringParser):
             # build the challenge string for the other game
             apart = a.session.partner
             bpart = b.session.partner
-            challenge_str2 = '%s (%s) %s (%s) %s %s%s' % (apart.name,
+            # as with challenge_str above, canonical FICS sends no
+            # time-class word; for variants only the variant name is given
+            if self.speed_variant.variant.name == 'chess':
+                variant_str2 = ''
+            else:
+                variant_str2 = ' %s' % self.speed_variant.variant.name
+            challenge_str2 = '%s (%s) %s (%s) %s%s%s' % (apart.name,
                 apart.get_rating(self.speed_variant),
                 bpart.name, bpart.get_rating(self.speed_variant), rated_str,
-                self.speed_variant, time_str)
+                variant_str2, time_str)
             if self.idn is not None:
                 challenge_str2 = '%s idn=%d' % (challenge_str2, self.idn)
             if self.clock_name not in ['fischer', 'untimed']:

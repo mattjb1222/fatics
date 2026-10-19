@@ -22,7 +22,7 @@ import speed_variant
 import tourney
 import user
 
-from command import *
+from .command import *
 
 @ics_command('listtourneys', '', admin.Level.user)
 class Listtourneys(Command):

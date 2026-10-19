@@ -166,12 +166,12 @@ class BaseUser(object):
             del self.aliases[name]
 
     def add_channel(self, id):
-        assert(type(id) == type(1) or type(id) == type(1l))
+        assert(type(id) == type(1) or type(id) == type(1))
         self.channels.append(id)
         self.channels.sort()
 
     def remove_channel(self, id):
-        assert(type(id) == type(1) or type(id) == type(1l))
+        assert(type(id) == type(1) or type(id) == type(1))
         self.channels.remove(id)
 
     def set_admin_level(self, level):
@@ -335,7 +335,7 @@ class RegUser(BaseUser):
         BaseUser.__init__(self)
         self.id = u['user_id']
         self.name = u['user_name']
-        self.passwd_hash = u['user_passwd']
+        self.passwd_hash = u['user_passwd'].encode('utf-8')
         self.email = u['user_email']
         self.real_name = u['user_real_name']
         self.last_logout = u['user_last_logout']
@@ -465,8 +465,8 @@ class RegUser(BaseUser):
         return db.user_get_log(self.name)
 
     def set_passwd(self, passwd):
-        self.passwd_hash = bcrypt.hashpw(passwd, bcrypt.gensalt())
-        db.user_set_passwd(self.id, self.passwd_hash)
+        self.passwd_hash = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt())
+        db.user_set_passwd(self.id, self.passwd_hash.decode('utf-8'))
 
     def set_admin_level(self, level):
         BaseUser.set_admin_level(self, level)
@@ -477,7 +477,7 @@ class RegUser(BaseUser):
         # don't perform expensive computation on arbitrarily long data
         if not is_legal_passwd(passwd):
             return False
-        return bcrypt.hashpw(passwd, self.passwd_hash) == self.passwd_hash
+        return bcrypt.hashpw(passwd.encode('utf-8'), self.passwd_hash) == self.passwd_hash
 
     def remove(self):
         return db.user_delete(self.id)
@@ -815,16 +815,16 @@ def is_legal_passwd(passwd):
     return True
 
 def make_passwd():
-    chars = string.letters + string.digits
-    passlen = random.choice(range(5, 8))
+    chars = string.ascii_letters + string.digits
+    passlen = random.choice(list(range(5, 8)))
     ret = ''
     for i in range(passlen):
         ret = ret + random.choice(chars)
     return ret
 
 def add_user(name, email, passwd, real_name):
-    pwhash = bcrypt.hashpw(passwd, bcrypt.gensalt())
-    user_id = db.user_add(name, email, pwhash, real_name, admin.Level.user)
+    pwhash = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt())
+    user_id = db.user_add(name, email, pwhash.decode('utf-8'), real_name, admin.Level.user)
     for chid in channel.chlist.get_default_channels():
         db.channel_add_user(chid, user_id)
     return user_id

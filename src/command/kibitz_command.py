@@ -17,9 +17,9 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from game_command import GameMixin
+from .game_command import GameMixin
 
-from command import *
+from .command import *
 
 class KibitzCommand(Command):
     def _do_kibitz(self, g, msg, conn):

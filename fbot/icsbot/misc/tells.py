@@ -56,8 +56,8 @@ def parse(string, short=False, argv_list=False, no_input=[]):
     is_raw_iter = is_raw.__iter__()
     while True:
         try:
-            curr = argv_iter.next()
-            raw = is_raw_iter.next()
+            curr = next(argv_iter)
+            raw = next(is_raw_iter)
         except StopIteration:
             break
         
@@ -66,7 +66,7 @@ def parse(string, short=False, argv_list=False, no_input=[]):
         elif curr.startswith('--') and len(curr)>=3:
             if curr[2:] in no_input:
                 flags[curr[2:]] = []
-            elif flags.has_key(curr[2:]):
+            elif curr[2:] in flags:
                 add_to = flags[curr[2:]]
             else:
                 flags[curr[2:]] = []
@@ -79,7 +79,7 @@ def parse(string, short=False, argv_list=False, no_input=[]):
             else:
                 if curr[1:] in no_input:
                     flags[curr[1:]] = []
-                elif flags.has_key(curr[1:]):
+                elif curr[1:] in flags:
                     add_to = flags[curr[1:]]
                 else:
                     flags[curr[1:]] = []

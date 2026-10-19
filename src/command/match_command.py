@@ -23,7 +23,7 @@ import admin
 import user
 import speed_variant
 
-from command import Command, ics_command
+from .command import Command, ics_command
 from online import online
 
 @ics_command('match', 'wt', admin.Level.user)

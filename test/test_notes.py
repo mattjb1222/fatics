@@ -17,7 +17,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestNotes(Test):
     def test_notes_guest(self):

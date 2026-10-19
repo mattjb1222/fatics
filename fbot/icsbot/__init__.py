@@ -50,7 +50,26 @@ except ImportError:
     #print 'No pytz available, times will be naive datetimes.'
     TZINFO = None
 
-import _data, tells, misc.regex
+from . import _data, tells, misc
+
+
+class StrSocket(object):
+    """Wraps a socket providing py2-style str-based send/recv."""
+    def __init__(self, sock):
+        self._s = sock
+    def send(self, data):
+        return self._s.send(data.encode('utf-8'))
+    def recv(self, n):
+        d = self._s.recv(n)
+        if d == b'':
+            return ''
+        return d.decode('utf-8', 'replace')
+    def settimeout(self, t):
+        self._s.settimeout(t)
+    def close(self):
+        self._s.close()
+    def __getattr__(self, name):
+        return getattr(self._s, name)
 
 class IcsBot(object):
     """This is the base class to handle the connection (and timer).
@@ -121,10 +140,10 @@ class IcsBot(object):
         self._block_regex = re.compile('^\x15(?P<id>\d+)\x16(?P<code>\d+)\x16(?P<data>.*)$', re.DOTALL)
         
         if not qtell_dummy:
-            import _qtell
+            from . import _qtell
             self.qtell = _qtell.Qtell(width=qtell_width, users=self['users'])
         else:
-            import _qtelldummy
+            from . import _qtelldummy
             self.qtell = _qtelldummy.QtellDummy()
         
         self._tells = tells.PrivateTells(self, tell_logger)
@@ -183,7 +202,7 @@ class IcsBot(object):
         # We use 1 for all miscallaneous commands.
         if not obj:
             return
-        elif type(obj) == str or type(obj) == unicode:
+        elif type(obj) == str or type(obj) == str:
             self.ics.send('1 ' + obj + '\n')
         else:
             for command in obj:
@@ -204,7 +223,7 @@ class IcsBot(object):
         #print 'sending:', repr(obj)
         
         i = 0
-        for i in xrange(2,1000):
+        for i in range(2,1000):
             if i not in self._used_blocks:
                 self._used_blocks.add(i)
                 break
@@ -277,7 +296,7 @@ class IcsBot(object):
         """
         to_delete = []
         # Get all indexes with the function:
-        for i in xrange(0, len(self._registered)):
+        for i in range(0, len(self._registered)):
             if self._registered[i][1] == function:
                 to_delete += [i]
                 
@@ -310,6 +329,7 @@ class IcsBot(object):
         else:
             s.settimeout(60)
         s.connect((ics, port))
+        s = StrSocket(s)
 
         data = ''
         while True:
@@ -389,7 +409,7 @@ class IcsBot(object):
         self.ics.settimeout(self.TIMEOUT)
         
         if not self._qtell_dummy:
-            print 'setting next note.'
+            print('setting next note.')
             self.qtell.set_header('%s%s:' % (self.handle, self.tags))
             self.qtell.set_next_note('Use "tell %s next" to view more.' % self.handle)
         else:
@@ -442,21 +462,21 @@ class IcsBot(object):
         """
         if epoch is None and no_kwargs is True:
             to_del = []
-            for i in xrange(0, len(self._timed)):
+            for i in range(0, len(self._timed)):
                 if self._timed[i][1] == function and self._timed[i][2] == args:
                     to_del += i
             for i in to_del:
                 del self._timed[i]
         elif epoch is None:
             to_del = []
-            for i in xrange(0, len(self._timed)):
+            for i in range(0, len(self._timed)):
                 if self._timed[i][1] == function and self._timed[i][2] == args and self._timed[i][3] == kwargs:
                     to_del += i
             for i in to_del:
                 del self._timed[i]
         elif no_kwargs is True:
             to_del = []
-            for i in xrange(0, len(self._timed)):
+            for i in range(0, len(self._timed)):
                 if self._timed[i][0] == epoch and self._timed[i][1] == function and self._timed[i][2] == args:
                     to_del += i
             for i in to_del:
@@ -518,7 +538,7 @@ class IcsBot(object):
                     data = info['data'].strip()
                     id_ = int(info['id'])
                     self.block_code = int(info['code'])
-                    if self._block_funcs.has_key(id_):
+                    if id_ in self._block_funcs:
                         handler = self._block_funcs[id_]
                         self.send(handler[0](data, *handler[1], **handler[2]))
                         del self._block_funcs[id_]
@@ -575,7 +595,7 @@ class IcsBot(object):
                 b = self._buffer
                 
                 if '**** You have been kicked out by' in b:
-                    raise(ConnectionClosed('Nuked'))
+                    raise ConnectionClosed
                 elif 'you can\'t both be logged in. ****' in b:
                     raise ConnectionClosed('Someone logged in as me.')
                 elif 'Logging you out.' in b:

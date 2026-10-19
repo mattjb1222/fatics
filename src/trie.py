@@ -204,6 +204,19 @@ class Trie(object):
         for node in self.root.walk():
             yield node.value
 
+    def __iter__(self):
+        for node in self.root.walk():
+            yield node.keypath
+
+    def keys(self):
+        return [node.keypath for node in self.root.walk()]
+
+    def values(self):
+        return list(self.itervalues())
+
+    def items(self):
+        return list(self.iteritems())
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

@@ -93,9 +93,9 @@ class Status(object):
         
         self.status['got_all'] = True
         
-        print 'known:', len(self._users.online)
-        print 'expected:'
-        print data.split('\n')[-1]
+        print('known:', len(self._users.online))
+        print('expected:')
+        print(data.split('\n')[-1])
 
 
     def _connect(self, matches):

@@ -18,6 +18,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import time
 import string
 import re
@@ -131,7 +132,7 @@ Formula: f1 & f2 & f3 & f4 & f5 & (rating>0) & !computer
 class DB(object):
     def __init__(self):
         self.db = MySQLdb.connect(host=db_host, db=db_db,
-            read_default_file="~/.my.cnf")
+            read_default_file=os.path.expanduser("~/.my.cnf"))
 
     def user_add(self, user_name, user_email, user_passwd, user_real_name,
             user_fics_name, user_admin_level):
@@ -147,7 +148,7 @@ class DB(object):
 
     def user_set_vars(self, user_id, vars):
         cursor = self.db.cursor()
-        vars_str = ','.join([k + '=%(' + k + ')s' for (k,v) in vars.iteritems()])
+        vars_str = ','.join([k + '=%(' + k + ')s' for (k,v) in vars.items()])
         query = ("UPDATE user SET %s WHERE user_id=" % vars_str) + '%(user_id)s'
         vars['user_id'] = user_id
         cursor.execute(query, vars)
@@ -155,7 +156,7 @@ class DB(object):
 
     def user_set_formula(self, user_id, formula):
         cursor = self.db.cursor()
-        for (k, v) in formula.iteritems():
+        for (k, v) in formula.items():
             cursor.execute('INSERT INTO formula SET user_id=%s,num=%s,f=%s',
                 (user_id, k, v))
         cursor.close()
@@ -201,7 +202,7 @@ class FBot(icsbot.IcsBot):
 
     def _make_passwd(self):
         chars = string.letters + string.digits
-        passlen = random.choice(range(pass_min, pass_max))
+        passlen = random.choice(list(range(pass_min, pass_max)))
         ret = []
         for i in range(passlen):
             ret.append(random.choice(chars))
@@ -269,7 +270,7 @@ class FBot(icsbot.IcsBot):
 
     title_re = re.compile(r'\((\w+)\)')
     def create_user(self, usr, tags, passwd):
-        phash = bcrypt.hashpw(passwd, bcrypt.gensalt())
+        phash = bcrypt.hashpw(passwd.encode('utf-8'), bcrypt.gensalt())
         real_name = usr
         email = '%s@fics' % usr
         admin_level = 10
@@ -308,16 +309,16 @@ class FBot(icsbot.IcsBot):
         if 'does not receive tells' in data or "isn't listening" in data:
             # there's nothing we can do
             return
-        print 'data %s' % data
+        print('data %s' % data)
         assert('told' in data)
 
         passwd = self._make_passwd()
         user_id = self.create_user(usr, tags, passwd)
         if user_id is None:
             return
-        print 'created user %d(%s)' % (user_id, usr)
+        print('created user %d(%s)' % (user_id, usr))
         if user_id is not None:
-            print('vars %s' % usr)
+            print(('vars %s' % usr))
             self.execute('vars %s' % usr, self.copy_vars, usr, tags, passwd,
                 user_id)
 
@@ -342,8 +343,8 @@ class FBot(icsbot.IcsBot):
         now = time.time()
         if self.last_tell_time and (now - self.last_tell_time <
                 self.time_between_tells):
-            print 'sleeping %f secs' % (self.time_between_tells -
-                (now - self.last_tell_time))
+            print('sleeping %f secs' % (self.time_between_tells -
+                (now - self.last_tell_time)))
             time.sleep(self.time_between_tells - (now - self.last_tell_time))
         self.last_tell_time = now
         self.send('t %s %s' % (usr, msg))

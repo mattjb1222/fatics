@@ -39,3 +39,10 @@ twistd.log
 .mr.developer.cfg
 .project
 .pydevproject
+
+# local test config
+test/local_config.py
+
+# python3 migration
+venv3/
+_trial_temp*

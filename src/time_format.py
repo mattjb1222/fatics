@@ -36,15 +36,33 @@ def hms(secs, user=None):
     (mins, secs) = divmod(secs, 60)
 
     if not user or user.session.ivars['ms']:
-        if hours != 0:
-            ret = '%d:%02d:%06.3f' % (hours, mins, secs)
+        # rounding for display can carry a second, e.g. 59.9999 -> 60.000
+        # round to the centisecond for the carry decision, so that
+        # 59.999 displays as 1:00.000 rather than 0:59.999
+        if round(secs, 2) >= 60:
+            r = 0.0
+            mins += 1
+            if mins >= 60:
+                mins -= 60
+                hours += 1
         else:
-            ret = '%d:%06.3f' % (mins, secs)
+            r = round(secs, 3)
+        if hours != 0:
+            ret = '%d:%02d:%06.3f' % (hours, mins, r)
+        else:
+            ret = '%d:%06.3f' % (mins, r)
     else:
+        r = int(round(secs))
+        if r >= 60:
+            r -= 60
+            mins += 1
+            if mins >= 60:
+                mins -= 60
+                hours += 1
         if hours != 0:
-            ret = '%d:%02d:%02d' % (hours, mins, secs)
+            ret = '%d:%02d:%02d' % (hours, mins, r)
         else:
-            ret = '%d:%02d' % (mins, secs)
+            ret = '%d:%02d' % (mins, r)
     return ret
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

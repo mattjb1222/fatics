@@ -17,7 +17,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from command import ics_command, Command
+from .command import ics_command, Command
 
 import game
 import user
@@ -168,7 +168,7 @@ class Allobservers(Command):
                     conn.write(_('No one is observing game %d.\n')
                         % g.number)
         else:
-            for g in game.games.itervalues():
+            for g in game.games.values():
                 if g.allobservers(conn):
                     count += 1
 

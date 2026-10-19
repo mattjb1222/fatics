@@ -77,7 +77,7 @@ class Moves(object):
             d['start_time'] = datetime.datetime.strptime(d['start_time'], '%a %b %d, %H:%M GMT %Y')
             d['start_time'].replace(tzinfo=TZINFO)
         except:
-            print 'The timezone of this account is not set to GMT, I need GMT for datetime.datetime'
+            print('The timezone of this account is not set to GMT, I need GMT for datetime.datetime')
         
         # Would use one liner ifs, but 2.4 compatibility ...        
         if d['wrating'] == 'UNR':
@@ -102,7 +102,7 @@ class Moves(object):
             d['moves'] += [mov[0]]
             spam = mov[1].split(':')[::-1]
             t = 0
-            for i in xrange(len(spam)):
+            for i in range(len(spam)):
                 t += float(spam[i]) * 60**i
             d['times'].append(t)
 

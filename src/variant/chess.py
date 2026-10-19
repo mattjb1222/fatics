@@ -117,7 +117,7 @@ class Zobrist(object):
         return self._castle[flags]
 
     def _rand_list(self, len):
-        return [random.getrandbits(64) for i in xrange(0, len)]
+        return [random.getrandbits(64) for i in range(0, len)]
 
 zobrist = Zobrist()
 
@@ -177,7 +177,7 @@ class Move(object):
                     self.new_ep = self.fr - 0x10
                     if self.pos.board[self.new_ep] != '-':
                         raise IllegalMoveError('bad en passant')
-                elif diff in [-0x11, -0xf] and self.to == self.pos.ep:
+                elif diff in [-0x11, -0xf] and (self.to == self.pos.ep or self.is_ep):
                     self.is_ep = True
                 else:
                     raise IllegalMoveError('bad pawn push')
@@ -192,7 +192,7 @@ class Move(object):
                     self.new_ep = self.fr + 0x10
                     if self.pos.board[self.new_ep] != '-':
                         raise IllegalMoveError('bad en passant')
-                elif diff in [0x11, 0xf] and self.to == self.pos.ep:
+                elif diff in [0x11, 0xf] and (self.to == self.pos.ep or self.is_ep):
                     self.is_ep = True
                 else:
                     raise IllegalMoveError('bad pawn push')
@@ -279,9 +279,9 @@ class Move(object):
                 r = rank(self.fr)
                 f = file(self.fr)
                 # try disambiguating with file
-                if len(filter(lambda sq: file(sq) == f, ambigs)) == 1:
+                if len([sq for sq in ambigs if file(sq) == f]) == 1:
                     san += 'abcdefgh'[f]
-                elif len(filter(lambda sq: rank(sq) == r, ambigs)) == 1:
+                elif len([sq for sq in ambigs if rank(sq) == r]) == 1:
                     san += '12345678'[r]
                 else:
                     san += sq_to_str(self.fr)
@@ -330,6 +330,7 @@ class Move(object):
 
     def is_legal(self):
         try:
+            self.check_pseudo_legal()
             self.check_legal()
         except IllegalMoveError:
             return False
@@ -364,7 +365,7 @@ class PositionHistory(object):
 
 class Position(object):
     def __init__(self, fen):
-        self.board = array('c', 0x80 * ['-'])
+        self.board = ['-' for _ in range(0x80)]
         self.castle_flags = 0
         self.king_pos = [None, None]
         self.history = PositionHistory()
@@ -1005,13 +1006,13 @@ class Position(object):
                 if len(froms) <= 1:
                     raise IllegalMoveError('unnecessary disambiguation')
                 f = 'abcdefgh'.index(m.group(2))
-                froms = filter(lambda sq: file(sq) == f, froms)
+                froms = [sq for sq in froms if file(sq) == f]
 
             if m.group(3):
                 r = '12345678'.index(m.group(3))
                 if len(froms) <= 1:
                     raise IllegalMoveError('unnecessary disambiguation')
-                froms = filter(lambda sq: rank(sq) == r, froms)
+                froms = [sq for sq in froms if rank(sq) == r]
 
             if len(froms) != 1:
                 raise IllegalMoveError('illegal or ambiguous move %s: %d interpretations' % (s, len(froms)))

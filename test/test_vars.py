@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestVarsCommand(Test):
     def test_self_vars(self):
@@ -41,7 +41,7 @@ class TestVarsCommand(Test):
         t.write('part guestefgh\n')
         self.expect('agree', t)
         t.write('follow guestefgh\n')
-        self.expect("You will now be following GuestEFGH's games.", t)
+        self.expect("You will now be following GuestABCD's partner.", t)
 
         t.write('vars\n')
         self.expect('Variable settings of Guest', t)
@@ -49,7 +49,7 @@ class TestVarsCommand(Test):
         self.expect('Prompt: ics>', t)
         self.expect('Interface: Test interface', t)
         self.expect('Bughouse partner: GuestEFGH', t)
-        self.expect('Following: GuestEFGH', t)
+        self.expect("Following: GuestABCD's partner", t)
 
         self.close(t)
 
@@ -215,13 +215,13 @@ class TestGameinfo(Test):
         self.expect("Challenge:", t2)
         t2.write('a\n')
 
-        self.expect('<g1> 1 p=0 t=blitz r=0 u=1,0 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=2 n=0', t)
+        self.expect_re(r'<g1> Unrated blitz \d+ Guest\w+ admin 0 120 12 0 p=0 u=1,0 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=2 n=0', t, timeout=30)
 
         # <g1> 482 p=0 t=blitz r=1 u=0,0 it=180,0 i=180,0 pt=0 rt=2009,2013 ts=1,1 m=2 n=0
         t3 = self.connect_as_guest()
         t3.write('iset gameinfo 1\n')
         t3.write('o 1\n')
-        self.expect('<g1> 1 p=0 t=blitz r=0 u=1,0 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=2 n=0', t3)
+        self.expect_re(r'<g1> Unrated blitz \d+ Guest\w+ admin 0 120 12 0 p=0 u=1,0 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=2 n=0', t3, timeout=30)
         self.close(t3)
 
         t.write('abort\n')
@@ -238,7 +238,7 @@ class TestGameinfo(Test):
         self.expect("Challenge:", t2)
         t2.write('a\n')
 
-        self.expect('<g1> 1 p=0 t=crazyhouse r=0 u=1,1 it=1200,5 i=1200,5 pt=0 rt=0,0 ts=0,0 m=2 n=0', t)
+        self.expect_re(r'<g1> Unrated crazyhouse \d+ GuestABCD GuestEFGH 0 1200 5 0 p=0 u=1,1 it=1200,5 i=1200,5 pt=0 rt=0,0 ts=0,0 m=2 n=0', t, timeout=30)
 
         t.write('abort\n')
 
@@ -256,13 +256,15 @@ class TestCompressMove(Test):
         self.expect('compressmove set.', t)
         self.expect("Challenge:", t2)
         t2.write('a\n')
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 1 2 12 39 39 120 120 1 none (0:00) none 0 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 1 2 12 39 39 120 120 1 none (0:00) none 0 1 0\r\n', t)
         n = 1
 
+        # the clock ticks (timeseal), so the time/flag fields vary;
+        # match them flexibly
         t.write('e4\n')
-        self.expect('<d1> %d 1 e4 e2e4 0 120000 0\r\n' % n, t)
+        self.expect_re(r'<d1> %d 1 e4 e2e4 \d \d+ \d\r\n' % n, t)
         t2.write('d5\n')
-        self.expect('<d1> %d 2 d5 d7d5 0 120000 0\r\n' % n, t)
+        self.expect_re(r'<d1> %d 2 d5 d7d5 \d \d+ \d\r\n' % n, t)
 
 
         # first board of observed game should not be compressed

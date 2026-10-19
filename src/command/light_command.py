@@ -2,7 +2,7 @@ import list_
 import user
 import admin
 
-from command import Command, ics_command, requires_registration
+from .command import Command, ics_command, requires_registration
 from config import config
 
 @ics_command('admin', '', admin.Level.admin)

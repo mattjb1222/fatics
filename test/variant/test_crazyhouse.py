@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test.test import *
+from fat_tests.test import *
 
 from pgn import Pgn
 
@@ -44,20 +44,20 @@ class TestCrazyhouse(Test):
         self.expect('Issuing:', t)
         self.expect('Challenge:', t2)
         t2.write('accept\n')
-        self.expect('blitz crazyhouse', t)
-        self.expect('blitz crazyhouse', t2)
+        self.expect('crazyhouse', t)
+        self.expect('crazyhouse', t2)
 
         # original FICS gives 39 for the material value instead of 24,
         # since it uses the material values from normal chess
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 1 3 0 24 24 180 180 1 none (0:00) none 0 0 0', t)
+        self.expect_re(r'<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 1 3 0 24 24 180 180 1 none \(0:00\) none 0 [01] 0', t, timeout=30)
         self.expect('<b1> game 1 white [] black []', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin -1 3 0 24 24 180 180 1 none (0:00) none 1 0 0', t2)
+        self.expect_re(r'<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin -1 3 0 24 24 180 180 1 none \(0:00\) none 1 [01] 0', t2)
         self.expect('<b1> game 1 white [] black []', t2)
 
         t.write('e4\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 GuestABCD admin -1 3 0 24 24 180 180 1 P/e2-e4 (0:00) e4 0 0 0', t)
+        self.expect_re(r'<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 GuestABCD admin -1 3 0 24 24 180 180 1 P/e2-e4 \(0:00\) e4 0 [01] 0', t)
         self.expect('<b1> game 1 white [] black []', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 GuestABCD admin 1 3 0 24 24 180 180 1 P/e2-e4 (0:00) e4 1 0 0', t2)
+        self.expect_re(r'<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 GuestABCD admin 1 3 0 24 24 180 180 1 P/e2-e4 \(0:00\) e4 1 [01] 0', t2)
         self.expect('<b1> game 1 white [] black []', t2)
 
         t2.write('d5\n')
@@ -123,7 +123,7 @@ class TestPgn(Test):
 
         pgn = Pgn(f)
         for g in pgn:
-            print 'game %s' % g
+            print('game %s' % g)
             t.write('match GuestEFGH white 5 0 crazyhouse\n')
             self.expect('Issuing:', t)
             self.expect('Challenge:', t2)

@@ -18,7 +18,7 @@
 #
 import admin
 
-from command import ics_command, Command
+from .command import ics_command, Command
 from db import db, DeleteError
 
 @ics_command('news', 'p', admin.Level.user)

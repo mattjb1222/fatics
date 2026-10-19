@@ -24,8 +24,8 @@ ZIPSEAL_PING = '[G]\x00'
 REPLY = '\x02\x39' # also known as "\x29" or "9"
 
 class Timeseal(object):
-    _timeseal_pat = re.compile(r'''^(\d+): (.*)\n$''')
-    _zipseal_pat = re.compile(r'''^([0-9a-f]+): (.*)\n$''')
+    _timeseal_pat = re.compile(rb'''^(\d+): (.*)\n$''')
+    _zipseal_pat = re.compile(rb'''^([0-9a-f]+): (.*)\n$''')
     zipseal_in = 0
     zipseal_out = 0
     _cmds = {
@@ -34,15 +34,18 @@ class Timeseal(object):
         'zipseal_encoder': ['timeseal/zipseal_encoder'],
     }
     def __init__(self):
-        self.timeseal = self._spawn('timeseal')
-        self.zipseal_decoder = self._spawn('zipseal_decoder')
-        self.zipseal_encoder = self._spawn('zipseal_encoder')
+        # Spawned lazily on first use: twistd forks when daemonizing, and a
+        # coprocess spawned before the fork is no longer a child of the
+        # daemon, which makes Popen.poll() report it as dead (ECHILD).
+        self.timeseal = None
+        self.zipseal_decoder = None
+        self.zipseal_encoder = None
 
     def _spawn(self, name):
         try:
             return subprocess.Popen(self._cmds[name], stdout=subprocess.PIPE, stdin=subprocess.PIPE)
         except Exception as e:
-            print('timeseal: failed to spawn %s: %s' % (name, e))
+            print(('timeseal: failed to spawn %s: %s' % (name, e)))
             return None
 
     def _ensure(self, name):
@@ -50,7 +53,8 @@ class Timeseal(object):
         p = getattr(self, name)
         if p is not None and p.poll() is None:
             return p
-        print('timeseal: respawning %s' % name)
+        print(('timeseal: respawning %s (old returncode %s)' % (name,
+            p.returncode if p is not None else 'n/a')))
         p = self._spawn(name)
         setattr(self, name, p)
         return p
@@ -58,42 +62,59 @@ class Timeseal(object):
     def decode_timeseal(self, line):
         p = self._ensure('timeseal')
         if p is None:
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', 'replace')
             return (0, line)
         try:
-            p.stdin.write(line + '\n')
+            if isinstance(line, str):
+                line = line.encode('utf-8')
+            p.stdin.write(line + b'\n')
+            p.stdin.flush()
             dec = p.stdout.readline()
         except (IOError, OSError):
             # process died mid-use; it will be respawned next time.
             # Treat this line as not timeseal-encoded.
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', 'replace')
             return (0, line)
         m = self._timeseal_pat.match(dec)
         if not m:
-            print('timeseal failed to match: {{%r}}' % dec)
+            print(('timeseal failed to match: {{%r}}' % dec))
             return (-1, None)
-        return (int(m.group(1), 10), m.group(2))
+        return (int(m.group(1), 10), m.group(2).decode('utf-8', 'replace'))
 
     def decode_zipseal(self, line):
         p = self._ensure('zipseal_decoder')
         if p is None:
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', 'replace')
             return (0, line)
         try:
-            p.stdin.write(line + '\n')
+            if isinstance(line, str):
+                line = line.encode('utf-8')
+            p.stdin.write(line + b'\n')
+            p.stdin.flush()
             dec = p.stdout.readline()
         except (IOError, OSError):
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', 'replace')
             return (0, line)
         m = self._zipseal_pat.match(dec)
         if not m or int(m.group(1), 16) == 0:
-            print('zipseal failed to match: {{%r}}' % dec)
+            print(('zipseal failed to match: {{%r}}' % dec))
             return (-1, None)
-        return (int(m.group(1), 16), m.group(2))
+        return (int(m.group(1), 16), m.group(2).decode('utf-8', 'replace'))
 
     def compress_zipseal(self, line):
+        if isinstance(line, str):
+            line = line.encode('utf-8')
         p = self._ensure('zipseal_encoder')
         if p is None:
             return None
         try:
             line = line[0:1023] # XXX
-            p.stdin.write('%04x%s' % (len(line),line))
+            p.stdin.write(('%04x' % len(line)).encode('ascii') + line)
+            p.stdin.flush()
             count_str = p.stdout.read(4)
             count = int(count_str, 16)
             ret = p.stdout.read(count)
@@ -107,9 +128,9 @@ class Timeseal(object):
     def print_stats(self):
         return
         if self.zipseal_in > 0:
-            print("compression statistics: %d in, %d out, ratio = %.3f" %
+            print(("compression statistics: %d in, %d out, ratio = %.3f" %
                 (self.zipseal_in, self.zipseal_out,
-                    float(self.zipseal_out) / self.zipseal_in))
+                    float(self.zipseal_out) / self.zipseal_in)))
 
 timeseal = Timeseal()
 

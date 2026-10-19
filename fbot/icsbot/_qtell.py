@@ -155,7 +155,7 @@ class Qtell(object):
         else:
             first = False
             
-        if not user.items.has_key('qtell_buffer') or not user.items['qtell_buffer']:
+        if 'qtell_buffer' not in user.items or not user.items['qtell_buffer']:
             yield 'qtell %s Nothing more to show.' % user['handle']
             return
     
@@ -178,7 +178,7 @@ class Qtell(object):
                 break
     
         try:
-            line = user.items['qtell_buffer'].next()
+            line = next(user.items['qtell_buffer'])
         except StopIteration:
             del user['qtell_buffer']
             yield ''.join(totell[:-1])
@@ -188,7 +188,7 @@ class Qtell(object):
         def new_iter(i, j):
             yield i
             while True:
-                yield j.next()
+                yield next(j)
     
         user.items['qtell_buffer'] = new_iter(line, user.items['qtell_buffer'])
     

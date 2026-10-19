@@ -22,7 +22,7 @@ import telnetlib
 import subprocess
 import time
 
-from test import *
+from .test import *
 
 timeseal_prog = '../timeseal/openseal'
 wine_prog = '/usr/bin/wine'

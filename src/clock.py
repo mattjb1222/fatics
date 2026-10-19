@@ -200,6 +200,10 @@ class UntimedClock(Clock):
         self._white_time = 0
         self._black_time = 0
 
+    def start(self, side):
+        # an untimed game never ticks
+        pass
+
     def got_move(self, side, ply, elapsed=None):
         pass
 

@@ -22,7 +22,7 @@ import twisted.internet.interfaces
 
 from twisted.protocols import basic
 from twisted.internet import reactor
-from zope.interface import implements
+from zope.interface import implementer
 
 import telnet
 import command_parser
@@ -45,10 +45,10 @@ def send_prompts():
     assert(not written_users)
 
 class Connection(basic.LineReceiver):
-    implements(twisted.internet.interfaces.IProtocol)
+    implementer(twisted.internet.interfaces.IProtocol)
     # the telnet transport changes all '\r\n' to '\n',
     # so we can just use '\n' here
-    delimiter = '\n'
+    delimiter = b'\n'
     MAX_LENGTH = 1024
     state = 'prelogin'
     user = None
@@ -100,6 +100,11 @@ class Connection(basic.LineReceiver):
         else:
             t = None
             dline = line
+        # don't decode the first line of a non-zipseal session: it may be
+        # a timeseal-encoded packet, which handleLine_login checks before
+        # any text decoding (as in the py2 code)
+        if isinstance(dline, bytes) and not self.session.check_for_timeseal:
+            dline = dline.decode('utf-8', 'replace')
         if t != None and t < 0:
             self.log('timeseal/zipseal error on line: {%r} {%r}' % (line, dline))
             self.write('timeseal error\n')
@@ -140,6 +145,8 @@ class Connection(basic.LineReceiver):
                 # we don't detect zipseal here, because we use
                 # the port number to detect it
             # no timeseal; continue
+            if isinstance(line, bytes):
+                line = line.decode('utf-8', 'replace')
 
         m = self.ivar_pat.match(line)
         if m:
@@ -200,28 +207,32 @@ class Connection(basic.LineReceiver):
             send_prompts()
 
     def loseConnection(self, reason):
+        if reason == 'logged in again':
+            # Graceful close with a grace period: the old connection may
+            # still complete an in-flight quit (old Twisted closed lazily).
+            # Keep the state machine in 'prompt' so such a quit is handled.
+            self.logged_in_again = True
+            if self.user and self.user.is_online:
+                self.user.log_off()
+            self._grace_close = reactor.callLater(30, self.transport.loseConnection)
+            return
         self.state = 'quitting'
         if self.timeout_check:
             self.timeout_check.cancel()
             self.timeout_check = None
-        if reason == 'logged in again':
-            # As a special case, we don't want to remove a user
-            # from the online list if we are losing this connection
-            # because the same user is logging in from another connection.
-            # This approach is necessary because when the user re-logs in,
-            # we don't want to have to wait for the first connection
-            # to finish closing before logging in.
-            self.logged_in_again = True
         # We prefer to call log_off() before the connection is closed so
         # we can print messages such as forfeit by disconnection,
         # but if the user disconnects abruptly then log_off() will be
         # called in connectionLost() instead.
         if self.user and self.user.is_online:
             self.user.log_off()
-        self.transport.loseConnection()
         if reason == 'quit':
             #timeseal.print_stats()
             self.write(db.get_server_message('logout'))
+        if getattr(self, '_grace_close', None):
+            self._grace_close.cancel()
+            self._grace_close = None
+        self.transport.loseConnection()
 
     def connectionLost(self, reason):
         basic.LineReceiver.connectionLost(self, reason)
@@ -241,6 +252,8 @@ class Connection(basic.LineReceiver):
         if self.buffer_output:
             self.output_buffer += s
         else:
+            if isinstance(s, str):
+                s = s.encode('utf-8')
             self.transport.write(s)
 
 

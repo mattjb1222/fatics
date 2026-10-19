@@ -23,7 +23,7 @@ import offer
 import game
 
 from command_parser import BadCommandError
-from command import ics_command, Command
+from .command import ics_command, Command
 from game_constants import *
 from db import db
 
@@ -136,12 +136,12 @@ class Eco(Command, GameMixin):
             g = self._game_param(args[0], conn)
 
         if g:
-            (ply, eco, long) = g.get_eco()
+            (ply, eco, int) = g.get_eco()
             (nicply, nic) = g.get_nic()
             conn.write(_('Eco for game %d (%s vs. %s):\n') % (g.number, g.white_name, g.black_name))
             conn.write(_(' ECO[%3d]: %s\n') % (ply, eco))
             conn.write(_(' NIC[%3d]: %s\n') % (nicply, nic))
-            conn.write(_('LONG[%3d]: %s\n') % (ply, long))
+            conn.write(_('LONG[%3d]: %s\n') % (ply, int))
 
 @ics_command('moves', 'n')
 class Moves(Command, GameMixin):

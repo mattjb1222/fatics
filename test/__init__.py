@@ -16,16 +16,28 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import sys
+
+# ensure server-side `import variant` (and friends) resolve to src/
+_src = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
+if _src not in sys.path:
+    sys.path.insert(0, _src)
+
+# The Python 3 standard library telnetlib (where still present) is a
+# bytes-based backport incompatible with the str-based API these tests
+# use, so replace it with the shim in this package.
+from . import telnet_shim
+sys.modules['telnetlib'] = telnet_shim
 
 from twisted.trial import unittest
 
-from test import connect, admin_passwd
+from .test import connect, admin_passwd
 
 def check_server():
     t = connect()
     if not t:
-        print 'ERROR: Unable to connect.  A running server is required to do the tests.\r\n'
+        print('ERROR: Unable to connect.  A running server is required to do the tests.\r\n')
         raise unittest.SkipTest # this doesn't actually work as intended
 
     # remove players possibly left over from an old run

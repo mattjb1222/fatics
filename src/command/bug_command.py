@@ -25,7 +25,7 @@ import speed_variant
 import game
 
 from command_parser import BadCommandError
-from command import Command, ics_command
+from .command import Command, ics_command
 
 @ics_command('partner', 'o')
 class Partner(Command):
@@ -82,7 +82,7 @@ class Bugwho(Command):
             conn.write(_('Bughouse games in progress\n'))
             count = 0
             seen = set()
-            boards = [g for g in game.games.values()
+            boards = [g for g in list(game.games.values())
                 if getattr(g, 'variant', None) is not None
                 and g.variant.name == 'bughouse']
             for g in boards:

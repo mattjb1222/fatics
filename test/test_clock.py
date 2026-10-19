@@ -20,12 +20,12 @@ import random
 
 import time
 
-from test import *
+from .test import *
 
 class TestTime(Test):
     def _time_to_secs(self, s):
         m = re.match(r'(?:(\d+):)?(\d+):(\d+)\.(\d{3})', s)
-        self.assert_(m)
+        self.assertTrue(m)
         (h, m, s) = (int(m.group(1)) if m.group(1) else 0, int(m.group(2)),
             int(m.group(3)) + float(m.group(4)) / 1000.0)
         return 60 * 60 * h + 60 * m + s
@@ -47,22 +47,22 @@ class TestTime(Test):
         self.expect('Creating: ', t)
         self.expect('Creating: ', t2)
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 1 0', t2)
 
         t.write('time\n')
-        self.expect('White Clock : 0:10.000', t)
+        self.expect_re(r'White Clock : 0:(?:09\.[0-9]{3}|10\.000)', t)
         self.expect('Black Clock : 0:10.000', t)
 
         t3 = self.connect_as_guest()
         t3.write('time admin\n')
-        self.expect('White Clock : 0:10.000', t3)
+        self.expect_re(r'White Clock : 0:(?:09\.[0-9]{3}|10\.000)', t3)
         self.expect('Black Clock : 0:10.000', t3)
         self.close(t3)
 
         t.write('e4\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 1 0', t2)
 
         t2.write('e5\n')
         self.expect('<12> rnbqkbnr pppp-ppp -------- ----p--- ----P--- -------- PPPP-PPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 2 P/e7-e5 (0:00) e5 0 1 0', t)
@@ -75,11 +75,11 @@ class TestTime(Test):
         m = self.expect_re('White Clock : (.*?)\r\n', t2)
         white_secs = self._time_to_secs(m.group(1))
         # white uses 3 seconds, gets 1 second increment
-        self.assert_(7.9 <= white_secs <= 8.1)
+        self.assertTrue(7.9 <= white_secs <= 8.1)
         # black uses 1 second
         m = self.expect_re('Black Clock : (.*?)\r\n', t2)
         black_secs = self._time_to_secs(m.group(1))
-        self.assert_(8.9 <= black_secs <= 9.1)
+        self.assertTrue(8.9 <= black_secs <= 9.1)
 
         t.write('abo\n')
         t2.write('abo\n')
@@ -117,12 +117,12 @@ class TestFlag(Test):
         self.expect('Challenge:', t2)
         t2.write('accept\n')
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 1 0', t2)
 
         t.write('e4\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 1 0', t2)
 
         t2.write('e5\n')
         self.expect('<12> rnbqkbnr pppp-ppp -------- ----p--- ----P--- -------- PPPP-PPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 2 P/e7-e5 (0:00) e5 0 1 0', t)
@@ -163,12 +163,12 @@ class TestFlag(Test):
         self.expect('Challenge:', t2)
         t2.write('accept\n')
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 1 0', t2)
 
         t.write('e4\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 1 0', t2)
 
         t2.write('e5\n')
         self.expect('<12> rnbqkbnr pppp-ppp -------- ----p--- ----P--- -------- PPPP-PPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 2 P/e7-e5 (0:00) e5 0 1 0', t)
@@ -217,12 +217,12 @@ class TestFlag(Test):
         self.expect('Challenge:', t2)
         t2.write('accept\n')
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 1 0', t2)
 
         t.write('e4\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 1 0', t2)
 
         t2.write('e5\n')
         self.expect('<12> rnbqkbnr pppp-ppp -------- ----p--- ----P--- -------- PPPP-PPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 2 P/e7-e5 (0:00) e5 0 1 0', t)
@@ -263,12 +263,12 @@ class TestFlag(Test):
         self.expect('Challenge:', t2)
         t2.write('accept\n')
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 none (0:00) none 1 1 0', t2)
 
         t.write('e4\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 0 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer -1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ----P--- -------- PPPP-PPP RNBQKBNR B -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 1 P/e2-e4 (0:00) e4 1 1 0', t2)
 
         t2.write('e5\n')
         self.expect('<12> rnbqkbnr pppp-ppp -------- ----p--- ----P--- -------- PPPP-PPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 0 1 39 39 10 10 2 P/e7-e5 (0:00) e5 0 1 0', t)

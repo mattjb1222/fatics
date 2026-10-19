@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 import time
 
@@ -32,18 +32,18 @@ class TestFischer(Test):
         self.expect('Challenge:', t)
         t.write('a\n')
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 5 39 39 180 180 1 none (0:00) none 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 5 39 39 180 180 1 none (0:00) none 1 1 0\r\n', t)
 
         t2.write('d4\n')
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 5 39 39 180 180 1 P/d2-d4 (0:00) d4 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 5 39 39 180 180 1 P/d2-d4 (0:00) d4 1 1 0\r\n', t)
 
         t.write('d5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 5 39 39 180 180 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 5 39 39 180 180 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
 
         # now the 5-second increment should be added
         time.sleep(2.0)
         t2.write('c4\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 5 39 39 183 180 2 P/c2-c4 (0:02) c4 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 5 39 39 183 180 2 P/c2-c4 (0:02) c4 1 1 0\r\n', t)
 
         t.write('abort\n')
         t2.write('abort\n')
@@ -73,23 +73,23 @@ class TestBronstein(Test):
         self.expect('bronstein', t)
         t.write('a\n')
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 2 39 39 180 180 1 none (0:00) none 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 2 39 39 180 180 1 none (0:00) none 1 1 0\r\n', t)
 
         t2.write('d4\n')
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 2 39 39 180 180 1 P/d2-d4 (0:00) d4 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 2 39 39 180 180 1 P/d2-d4 (0:00) d4 1 1 0\r\n', t)
 
         t.write('d5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 2 39 39 180 180 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 2 39 39 180 180 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
 
         # 1-second move time should leave clock unchanged
         time.sleep(1.0)
         t2.write('c4\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 2 39 39 180 180 2 P/c2-c4 (0:01) c4 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 3 2 39 39 180 180 2 P/c2-c4 (0:01) c4 1 1 0\r\n', t)
 
         # 4-second move time should subtract 2 seconds
         time.sleep(4.0)
         t.write('e5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp--ppp -------- ---pp--- --PP---- -------- PP--PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 2 39 39 180 178 3 P/e7-e5 (0:04) e5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp--ppp -------- ---pp--- --PP---- -------- PP--PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 3 2 39 39 180 178 3 P/e7-e5 (0:04) e5 1 1 0\r\n', t)
 
         t.write('abort\n')
         t2.write('abort\n')
@@ -124,18 +124,18 @@ class TestHourglass(Test):
         self.expect('hourglass', t)
         t.write('a\n')
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 1 none (0:00) none 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 1 none (0:00) none 1 1 0\r\n', t)
 
         t2.write('d4\n')
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 60 60 1 P/d2-d4 (0:00) d4 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 60 60 1 P/d2-d4 (0:00) d4 1 1 0\r\n', t)
 
         t.write('d5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
 
         # 2-second move time should subtract from moving player and add to opp
         time.sleep(2.0)
         t2.write('c4\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 58 62 2 P/c2-c4 (0:02) c4 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 58 62 2 P/c2-c4 (0:02) c4 1 1 0\r\n', t)
 
         t.write('abort\n')
         t2.write('abort\n')
@@ -181,30 +181,30 @@ class TestStandardClock(Test):
         self.expect('3/90,SD/10+15', t)
         t.write('a\n')
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 39 5400 5400 1 none (0:00) none 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 39 5400 5400 1 none (0:00) none 1 1 0\r\n', t)
 
         t2.write('d4\n')
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 90 15 39 39 5400 5400 1 P/d2-d4 (0:00) d4 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 90 15 39 39 5400 5400 1 P/d2-d4 (0:00) d4 1 1 0\r\n', t)
 
         t.write('d5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 39 5400 5400 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 39 5400 5400 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
 
         # 15-second increment only
         time.sleep(1.0)
         t2.write('c4\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 90 15 39 39 5414 5400 2 P/c2-c4 (0:01) c4 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- --PP---- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 90 15 39 39 5414 5400 2 P/c2-c4 (0:01) c4 1 1 0\r\n', t)
 
         t.write('e5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp--ppp -------- ---pp--- --PP---- -------- PP--PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 39 5414 5415 3 P/e7-e5 (0:00) e5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp--ppp -------- ---pp--- --PP---- -------- PP--PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 39 5414 5415 3 P/e7-e5 (0:00) e5 1 1 0\r\n', t)
 
         # 10-minute bonus after 3rd move (plus usual 15s increment)
         time.sleep(1.0)
         t2.write('dxe5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp--ppp -------- ---pP--- --P----- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 90 15 39 38 6028 5415 3 P/d4-e5 (0:01) dxe5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp--ppp -------- ---pP--- --P----- -------- PP--PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 90 15 39 38 6028 5415 3 P/d4-e5 (0:01) dxe5 1 1 0\r\n', t)
 
         # likewise
         t.write('d4\n')
-        self.expect('\r\n<12> rnbqkbnr ppp--ppp -------- ----P--- --Pp---- -------- PP--PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 38 6028 6030 4 P/d5-d4 (0:00) d4 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp--ppp -------- ----P--- --Pp---- -------- PP--PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 90 15 39 38 6028 6030 4 P/d5-d4 (0:00) d4 1 1 0\r\n', t)
 
         t.write('abort\n')
         t2.write('abort\n')
@@ -239,18 +239,18 @@ class TestUntimed(Test):
         self.set_style_12(t)
 
         t2.write('match admin untimed white\n')
-        self.expect('Issuing: testplayer (----) [white] admin (----) unrated untimed.\r\n', t2)
-        self.expect('Challenge: testplayer (----) [white] admin (----) unrated untimed.\r\n', t)
+        self.expect('Issuing: testplayer (----) [white] admin (----) unrated.\r\n', t2)
+        self.expect('Challenge: testplayer (----) [white] admin (----) unrated.\r\n', t)
         t.write('a\n')
         self.expect('Creating: testplayer (----) admin (----) unrated untimed 0 0\r\n', t)
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 0 0 39 39 0 0 1 none (0:00) none 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 0 0 39 39 0 0 1 none (0:00) none 1 0 0\r\n', t)
 
         t2.write('d4\n')
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 0 0 39 39 0 0 1 P/d2-d4 (0:00) d4 1 0 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 0 0 39 39 0 0 1 P/d2-d4 (0:00) d4 1 0 0\r\n', t)
 
         t.write('d5\n')
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 0 0 39 39 0 0 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 0 0 39 39 0 0 2 P/d7-d5 (0:00) d5 1 0 0\r\n', t)
 
         t.write('abort\n')
         t2.write('abort\n')
@@ -258,15 +258,15 @@ class TestUntimed(Test):
 
         # with 'untimed' keyword and zero time and inc
         t2.write('match admin untimed 0 0\n')
-        self.expect('Challenge:', t)
-        self.expect('untimed', t)
+        self.expect('Challenge: ', t)
+        self.expect('unrated.\r\n', t)
         t.write('decl\n')
         self.expect('admin declines', t2)
 
         # without 'untimed' keyword
         t2.write('match admin 0 0\n')
-        self.expect('Challenge:', t)
-        self.expect('untimed', t)
+        self.expect('Challenge: ', t)
+        self.expect('unrated.\r\n', t)
         t.write('decl\n')
         self.expect('admin declines', t2)
 

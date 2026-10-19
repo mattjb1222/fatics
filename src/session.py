@@ -98,7 +98,7 @@ class Session(object):
                 # a crash in the game-end path must not leave this
                 # user stuck online (unloggable); detach and continue
                 # the cleanup -- the game is handled by the error path
-                print 'session.close: game.leave crashed; continuing cleanup'
+                print('session.close: game.leave crashed; continuing cleanup')
             self.game = None
         del self.offers_received[:]
         del self.offers_sent[:]

@@ -18,7 +18,7 @@
 
 from datetime import datetime
 
-from test import *
+from .test import *
 
 class TestHistory(Test):
     def test_history_guest(self):

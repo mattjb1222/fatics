@@ -890,7 +890,7 @@ class PlayedGame(Game):
         for played games, not examined games. """
         super(PlayedGame, self).observe(u)
         if u.session.ivars['gameinfo']:
-            u.write(self.gameinfo_str)
+            u.write_nowrap(self.gameinfo_str)
 
     def result(self, msg, result_code):
         # guard against a double save: if this game already ended (e.g. a
@@ -942,7 +942,7 @@ class PlayedGame(Game):
                     # incomplete result: end the partners' board too
                     self.bug_link.result("Partners' game aborted", '*')
             else:
-                print 'unexpected result code %s' % result_code
+                print('unexpected result code %s' % result_code)
                 assert(False)
 
         self.free()
@@ -964,7 +964,8 @@ class PlayedGame(Game):
 
     def allobservers(self, conn):
         if self.observers:
-            olist = [u.get_display_name() for u in self.observers]
+            olist = [u.get_display_name()
+                    for u in sorted(self.observers, key=lambda u: u.name.lower())]
             conn.write(ngettext('Observing %d [%s vs. %s]: %s (%d user)\n',
                     'Observing %d [%s vs. %s]: %s (%d users)\n',
                     len(olist)) %

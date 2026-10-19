@@ -18,23 +18,38 @@
 
 import re
 
-legal_chars_re = re.compile('''^[\x20-\xfd]*$''')
+legal_chars_re = re.compile(rb'''^[\x20-\xfd]*$''')
 def check_user_utf8(s):
-    ret =  legal_chars_re.match(s)
+    # input is already-decoded text; re-encode to bytes to preserve the
+    # original byte-level checks (no control chars, no 0x7f, valid UTF-8)
+    if isinstance(s, str) and '\ufffd' in s:
+        # a replacement character means the original line contained
+        # invalid (e.g. raw 0xff) bytes, like python 2 would have seen
+        return False
+    try:
+        if isinstance(s, bytes):
+            b = s
+        else:
+            b = s.encode('utf-8')
+    except UnicodeEncodeError:
+        return False
+    ret = legal_chars_re.match(b)
     if ret:
         try:
-            unicode(s, 'utf-8')
+            b.decode('utf-8')
         except UnicodeDecodeError:
             ret = False
     return ret
 
-illegal_char_re = re.compile('''[^\x20-\xfd]''')
+illegal_char_re = re.compile(rb'''[^\x20-\xfd]''')
 def utf8_to_ascii(s):
     """ Try to gracefully convert UTF-8 to ASCII.  Non-ASCII chars are
-    replaced by '?'. """
+    replaced by '?'. Input/output are bytes. """
+    if isinstance(s, str):
+        s = s.encode('utf-8')
     try:
-        return unicode(s, 'utf-8').encode('ascii', 'replace')
+        return s.decode('utf-8').encode('ascii', 'replace')
     except UnicodeDecodeError:
-        return re.sub(illegal_char_re, '?', s)
+        return re.sub(illegal_char_re, b'?', s)
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

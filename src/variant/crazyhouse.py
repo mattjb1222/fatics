@@ -24,7 +24,7 @@ from array import array
 import time_format
 
 from game_constants import *
-from base_variant import BaseVariant, IllegalMoveError
+from .base_variant import BaseVariant, IllegalMoveError
 
 """
 0x88 board representation; pieces are represented as ASCII,
@@ -133,7 +133,7 @@ class Zobrist(object):
         return self._holding[(self._piece_index[pc] << 4) | (count - 1)]
 
     def _rand_list(self, len):
-        return [random.getrandbits(64) for i in xrange(0, len)]
+        return [random.getrandbits(64) for i in range(0, len)]
 
 zobrist = Zobrist()
 
@@ -197,7 +197,7 @@ class Move(object):
                     self.new_ep = self.fr - 0x10
                     if self.pos.board[self.new_ep] != '-':
                         raise IllegalMoveError('bad en passant')
-                elif diff in [-0x11, -0xf] and self.to == self.pos.ep:
+                elif diff in [-0x11, -0xf] and (self.to == self.pos.ep or self.is_ep):
                     self.is_ep = True
                 else:
                     raise IllegalMoveError('bad pawn push')
@@ -212,7 +212,7 @@ class Move(object):
                     self.new_ep = self.fr + 0x10
                     if self.pos.board[self.new_ep] != '-':
                         raise IllegalMoveError('bad en passant')
-                elif diff in [0x11, 0xf] and self.to == self.pos.ep:
+                elif diff in [0x11, 0xf] and (self.to == self.pos.ep or self.is_ep):
                     self.is_ep = True
                 else:
                     raise IllegalMoveError('bad pawn push')
@@ -301,9 +301,9 @@ class Move(object):
                 r = rank(self.fr)
                 f = file(self.fr)
                 # try disambiguating with file
-                if len(filter(lambda sq: file(sq) == f, ambigs)) == 1:
+                if len([sq for sq in ambigs if file(sq) == f]) == 1:
                     san += 'abcdefgh'[f]
-                elif len(filter(lambda sq: rank(sq) == r, ambigs)) == 1:
+                elif len([sq for sq in ambigs if rank(sq) == r]) == 1:
                     san += '12345678'[r]
                 else:
                     san += sq_to_str(self.fr)
@@ -335,6 +335,7 @@ class Move(object):
 
     def is_legal(self):
         try:
+            self.check_pseudo_legal()
             self.check_legal()
         except IllegalMoveError:
             return False
@@ -369,7 +370,7 @@ class PositionHistory(object):
 
 class Position(object):
     def __init__(self, fen):
-        self.board = array('c', 0x80 * ['-'])
+        self.board = ['-' for _ in range(0x80)]
         # Using a byte to store a boolean value is inefficient, but
         # I don't want to prematurely optimize.
         self.promoted = array('b', 0x80 * [0])
@@ -663,7 +664,7 @@ class Position(object):
         self.history.set_move(self.ply - 1 , mv)
         #assert(self.hash == self._compute_hash())
         if self.hash != self._compute_hash():
-            print 'failed on move %d %s' % (self.ply, str(mv))
+            print('failed on move %d %s' % (self.ply, str(mv)))
             assert(False)
         self._check_material()
         self.history.set_hash(self.ply, self.hash)
@@ -704,7 +705,7 @@ class Position(object):
         if self.ep:
             hash ^= zobrist.ep_hash(self.ep)
         hash ^= zobrist.castle_hash(self.castle_flags)
-        for (pc, count) in self.holding.iteritems():
+        for (pc, count) in self.holding.items():
             if count > 0:
                 hash ^= zobrist.holding_hash(pc, count)
         return hash
@@ -785,14 +786,14 @@ class Position(object):
         wmat = sum([piece_material[pc.lower()]
             for (sq, pc) in self if pc != '-' and piece_is_white(pc)])
 
-        for (pc,count) in self.holding.iteritems():
+        for (pc,count) in self.holding.items():
             if pc.isupper():
                 wmat += piece_material[pc.lower()] * count
             else:
                 bmat += piece_material[pc] * count
 
         if bmat != self.material[0]:
-            print self.to_xfen()
+            print(self.to_xfen())
         assert(bmat == self.material[0])
         assert(wmat == self.material[1])
 
@@ -821,7 +822,7 @@ class Position(object):
         # try drops
         if self.in_check:
             # try dropping a piece
-            for (pc, count) in self.holding.iteritems():
+            for (pc, count) in self.holding.items():
                 if pc.isupper() == self.wtm and count > 0:
                     # try dropping at all empty sqares adjacent to king;
                     # note that trying drops farther away is superfluous
@@ -836,7 +837,7 @@ class Position(object):
         else:
             # if the player has any pieces in holding, then there
             # is a legal move
-            for (pc, count) in self.holding.iteritems():
+            for (pc, count) in self.holding.items():
                 if pc.isupper() == self.wtm and count > 0:
                     return True
 
@@ -1110,13 +1111,13 @@ class Position(object):
                 if len(froms) <= 1:
                     raise IllegalMoveError('unnecessary disambiguation')
                 f = 'abcdefgh'.index(m.group(2))
-                froms = filter(lambda sq: file(sq) == f, froms)
+                froms = [sq for sq in froms if file(sq) == f]
 
             if m.group(3):
                 r = '12345678'.index(m.group(3))
                 if len(froms) <= 1:
                     raise IllegalMoveError('unnecessary disambiguation')
-                froms = filter(lambda sq: rank(sq) == r, froms)
+                froms = [sq for sq in froms if rank(sq) == r]
 
             if len(froms) != 1:
                 raise IllegalMoveError('illegal or ambiguous move %s: %d interpretations' % (s, len(froms)))

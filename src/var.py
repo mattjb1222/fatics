@@ -332,7 +332,7 @@ class VarList(object):
         self.default_vars = {}
         self.transient_vars = {}
         self.persistent_vars = set()
-        for var in vars.itervalues():
+        for var in vars.values():
             if var.is_persistent:
                 self.default_vars[var.name] = var.default
                 if not var.is_formula_or_note:
@@ -386,7 +386,7 @@ class VarList(object):
         # does not allow setting an xml ivariable.
 
         self.default_ivars = {}
-        for ivar in ivars.itervalues():
+        for ivar in ivars.values():
             self.default_ivars[ivar.name] = ivar.default
 
     def get_persistent_var_names(self):

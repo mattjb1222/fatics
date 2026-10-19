@@ -82,7 +82,7 @@ class _Item(object):
                add it to the _item_set()/_item_load() special function.
         """
 
-        if self._on_update.has_key(item):
+        if item in self._on_update:
             self._on_update[item] += [[function, persistent]]
             return
         self._on_update[item] = [[function, persistent]]
@@ -115,7 +115,7 @@ class _Item(object):
         Be careful about editing the item. As this editing might be in place,
         nothing will be triggered in that case.
         """
-        if self.items.has_key(item):
+        if item in self.items:
             return self.items[item]
 
         try:
@@ -130,7 +130,7 @@ class _Item(object):
         """Return True if the item either is already set, or there is a loader
         for it.
         """
-        return self.items.has_key(item) or item in self.loader or item in self.__class__._loader
+        return item in self.items or item in self.loader or item in self.__class__._loader
     
     
     def copy(self):
@@ -165,7 +165,7 @@ class _Item(object):
         if old == new:
             return
 
-        if self.__class__._on_update.has_key(item):
+        if item in self.__class__._on_update:
             to_del = []
             for function, pers in self.__class__._on_update[item]:
                 if not pers:
@@ -179,7 +179,7 @@ class _Item(object):
             if not self.__class__._on_update[item]:
                 del self.__class__._on_update[item]
         
-        if self._on_update.has_key(item):
+        if item in self._on_update:
             to_del = []    
             for function, pers in self._on_update.get(item, []):
                 if not pers:
@@ -198,7 +198,7 @@ class _Item(object):
         """Delete the specific item or execute the special function for it and then
         delete it. (Do nothing if item doesn't exist).
         """
-        if not self.items.has_key(item):
+        if item not in self.items:
             return
 
         del self.items[item]
@@ -298,7 +298,7 @@ class Data(object):
             self.Item._loader[item] = function
             return
             
-        if self.Item._on_update.has_key(item):
+        if item in self.Item._on_update:
             self.Item._on_update[item].append([function, persistent])
             return
         self.Item._on_update[item] = [[function, persistent]]
@@ -322,7 +322,7 @@ class Data(object):
             ident = handle.lower()
         except AttributeError:
             ident = handle
-        if not self._loaded_items.has_key(ident):
+        if ident not in self._loaded_items:
             return self._load(handle)
         #print handle, ident, self._loaded_items[ident].items
         return self._loaded_items[ident]
@@ -345,17 +345,17 @@ class Data(object):
     def iteritems(self):
         """Iterator over all stored items.
         """
-        return self._loaded_items.iteritems()
+        return iter(self._loaded_items.items())
         
     def iterkeys(self):
         """Iterator over all stored keys.
         """
-        return self._loaded_items.iterkeys()
+        return iter(self._loaded_items.keys())
 
     def itervalues(self):
         """Iterator over all stored items.
         """
-        return self._loaded_items.itervalues()
+        return iter(self._loaded_items.values())
 
     def __iter__(self):
         return self._loaded_items.__iter__()

@@ -28,7 +28,7 @@ import list_
 from reload import reload
 
 from db import db
-from command import Command, ics_command, requires_registration
+from .command import Command, ics_command, requires_registration
 from command_parser import BadCommandError
 from config import config
 
@@ -46,7 +46,7 @@ class Addplayer(Command):
     def run(self, args, conn):
         [name, email, real_name] = args
         try:
-            u = user.find_by_name_exact(name, conn)
+            u = user.find_by_name_exact(name)
         except user.UsernameException:
             conn.write(_('"%s" is not a valid handle.\n') % name)
             return

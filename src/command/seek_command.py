@@ -25,7 +25,7 @@ import user
 
 from command_parser import BadCommandError
 from game_constants import *
-from command import Command, ics_command
+from .command import Command, ics_command
 
 @ics_command('seek', 't')
 class Seek(Command):
@@ -44,12 +44,12 @@ class Seek(Command):
         try:
             s = seek.Seek(conn.user, args[0])
         except match.MatchError as e:
-            conn.write(e[0])
+            conn.write(e.args[0])
             return
 
         # Check if the user has already posted the same seek.  It might be
         # more efficient to do this check as part of seek.find_matching()
-        if s in seek.seeks.values():
+        if s in list(seek.seeks.values()):
             conn.write(_('You already have an active seek with the same parameters.\n'))
             return
 
@@ -174,11 +174,11 @@ class Sought(Command):
     def run(self, args, conn):
         if args[0] is not None:
             if args[0] == 'all':
-                slist = [s for s in seek.seeks.values() if not s.expired]
+                slist = [s for s in list(seek.seeks.values()) if not s.expired]
             else:
                 raise BadCommandError
         else:
-            slist = [s for s in seek.seeks.values() if not s.expired and
+            slist = [s for s in list(seek.seeks.values()) if not s.expired and
                 not conn.user.censor_or_noplay(s.a) and
                 s.check_formula(conn.user) and s.meets_formula_for(conn.user)]
 

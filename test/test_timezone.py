@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestTimezone(Test):
     def test_timezone_guest(self):
@@ -49,7 +49,7 @@ class TestTimezone(Test):
         t.write('ex\n')
         self.expect('Starting a game', t)
         t.write('moves\n')
-        self.expect_re(' FJS?T', t)
+        self.expect_re(' FJS?T| \\+12', t)
         t.write('unex\n')
         self.close(t)
 
@@ -60,7 +60,7 @@ class TestTimezone(Test):
         self.expect('Time zone set to "America/Caracas"', t)
 
         t.write('date\n')
-        self.expect(' VET', t)
+        self.expect(' -04', t)
 
         self.close(t)
 
@@ -68,11 +68,11 @@ class TestTimezone(Test):
 
         t.write('date\n')
 
-        self.expect(' VET', t)
+        self.expect(' -04', t)
         t.write('set tzone\n')
         self.expect('Time zone set to "UTC"', t)
         t.write('date\n')
-        self.expect_not(' VET', t)
+        self.expect_not('-04', t)
 
         self.close(t)
 

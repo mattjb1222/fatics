@@ -146,7 +146,7 @@ class ExaminedGame(Game):
             san = self.moves[self.variant.pos.ply]
             mv = self.variant.parse_move(san, conn)
             if not mv:
-                print 'internal error: failed to parse move %s' % san
+                print('internal error: failed to parse move %s' % san)
             assert(mv)
             mv.time = self._get_move_time(self.variant.pos.ply)
             # carry the recorded per-move time in the lag field too, so
@@ -265,8 +265,10 @@ class ExaminedGame(Game):
     def allobservers(self, conn):
         # despite the name, this includes examiners too
         assert(self.players)
-        olist = [('#' + u.get_display_name()) for u in self.players]
-        olist += [u.get_display_name() for u in self.observers]
+        olist = [('#' + u.get_display_name())
+                for u in sorted(self.players, key=lambda u: u.name.lower())]
+        olist += [u.get_display_name()
+                for u in sorted(self.observers, key=lambda u: u.name.lower())]
 
         # Original FICS uses %2d for the game number, but that doesn't
         # make sense to me, since game numbers are frequently 3 digits.

@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestAdjourn(Test):
     @with_player('TestPlayer')
@@ -59,8 +59,8 @@ class TestAdjourn(Test):
         self.expect('You have an adjourned game with TestPlayer.', t)
 
         t.write('match testplayer\n')
-        self.expect('Issuing: admin (----) TestPlayer (----) rated blitz 3 4 (adjourned)', t)
-        self.expect('Challenge: admin (----) TestPlayer (----) rated blitz 3 4 (adjourned)', t2)
+        self.expect('Issuing: admin (----) TestPlayer (----) rated 3 4 (adjourned)', t)
+        self.expect('Challenge: admin (----) TestPlayer (----) rated 3 4 (adjourned)', t2)
         t2.write('a\n')
 
         self.expect('Creating: admin (----) TestPlayer (----) rated blitz 3 4', t)
@@ -160,8 +160,8 @@ class TestAdjourn(Test):
         self.expect('You have an adjourned game with TestPlayer.', t)
 
         t.write('match testplayer\n')
-        self.expect('Issuing: admin (----) TestPlayer (----) rated blitz 3 4 (adjourned)', t)
-        self.expect('Challenge: admin (----) TestPlayer (----) rated blitz 3 4 (adjourned)', t2)
+        self.expect('Issuing: admin (----) TestPlayer (----) rated 3 4 (adjourned)', t)
+        self.expect('Challenge: admin (----) TestPlayer (----) rated 3 4 (adjourned)', t2)
         t2.write('a\n')
 
         self.expect('Creating: admin (----) TestPlayer (----) rated blitz 3 4', t)
@@ -181,8 +181,8 @@ class TestAdjourn(Test):
         self.expect('{Game 1 (admin vs. TestPlayer) Game adjourned by agreement} *', t2)
 
         t2.write('match admin\n')
-        self.expect('Issuing: TestPlayer (----) admin (----) rated blitz 3 4 (adjourned)', t2)
-        self.expect('Challenge: TestPlayer (----) admin (----) rated blitz 3 4 (adjourned)', t)
+        self.expect('Issuing: TestPlayer (----) admin (----) rated 3 4 (adjourned)', t2)
+        self.expect('Challenge: TestPlayer (----) admin (----) rated 3 4 (adjourned)', t)
         t.write('match testplayer\n')
         self.expect('Creating: admin (----) TestPlayer (----) rated blitz 3 4', t)
         self.expect('Creating: admin (----) TestPlayer (----) rated blitz 3 4', t2)

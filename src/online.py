@@ -84,7 +84,7 @@ class Online(object):
         return ulist
 
     def __iter__(self):
-        return iter(self.online_names.values())
+        return iter(list(self.online_names.values()))
 
     def __len__(self):
         return len(self.online_names)

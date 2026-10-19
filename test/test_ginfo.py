@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 import speed_variant
 
@@ -131,7 +131,7 @@ class TestGinfo(Test):
             t2.write('ginfo\n')
             self.expect('Game 1: Game information.', t2)
             if vname != 'chess':
-                self.expect('unrated blitz %s' % vname, t2)
+                self.expect('unrated %s' % vname, t2)
             t.write('abo\n')
             self.expect('aborted on move 1', t2)
 

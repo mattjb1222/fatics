@@ -17,7 +17,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from command import ics_command, Command
+from .command import ics_command, Command
 
 import var
 import user

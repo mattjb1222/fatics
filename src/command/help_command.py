@@ -20,7 +20,7 @@
 import os.path
 import re
 
-from command import ics_command, Command
+from .command import ics_command, Command
 import command_parser
 from server import server
 
@@ -33,9 +33,9 @@ class Help(Command):
         # non-admins should not be able to see/view documentation for
         # admin commands.
         if conn.user.admin_level > admin.level.user:
-            help_cmds = [c.name for c in command_parser.command_list.admin_cmds.itervalues()]
+            help_cmds = [c.name for c in command_parser.command_list.admin_cmds.values()]
         else:
-            help_cmds = [c.name for c in command_parser.command_list.cmds.itervalues()]
+            help_cmds = [c.name for c in command_parser.command_list.cmds.values()]
             
         # for legal reasons, the license help file should be in the code
         # and not in a separate file

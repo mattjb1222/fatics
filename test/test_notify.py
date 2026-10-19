@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestNotify(Test):
     def test_notify_guest(self):
@@ -313,7 +313,7 @@ class TestGnotify(Test):
         t2.write('match guestabcd 2+12 b zh u\n')
         self.expect('Challenge: ', t3)
         t3.write('a\n')
-        self.expect('Game notification: GuestABCD (++++) vs. TestPlayer (----) unrated blitz crazyhouse 2 12: Game 1', t)
+        self.expect('Game notification: GuestABCD (++++) vs. TestPlayer (----) unrated crazyhouse 2 12: Game 1', t)
         t3.write('abo\n')
 
         t.write('-gnotify testplayer\n')

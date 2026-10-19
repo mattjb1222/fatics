@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestShowadmins(Test):
     def test_showadmins(self):
@@ -94,7 +94,7 @@ class TestShowtms(Test):
         t.write('showtm\n')
         self.expect_re(r'tmplayer          Available    \d second', t)
         m = self.expect_re(r'(\d+) TMs? logged in\.', t)
-        self.assert_(int(m.group(1)) == count + 1)
+        self.assertTrue(int(m.group(1)) == count + 1)
 
         t.write('match tmplayer 1+0 u\n')
         self.expect('Challenge:', t2)

@@ -17,7 +17,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestUtf8(Test):
     def test_unprintable(self):
@@ -25,7 +25,9 @@ class TestUtf8(Test):
         t.write('t admin \x07test\n')
         self.expect("invalid characters", t)
 
-        t.write('fi \xffadmin\n')
+        t.write('fi ')
+        import os
+        os.write(t.sock.fileno(), b'\xff\xffadmin\n')
         self.expect("invalid characters", t)
 
         t.write('shout \x00\n')

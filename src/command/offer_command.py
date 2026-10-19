@@ -17,7 +17,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from command import *
+from .command import *
 
 def pick_offer(offers, arg, who):
     """Select an offer by 1-based index ("accept n") or by the

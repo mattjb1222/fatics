@@ -102,7 +102,7 @@ class Alias(Command):
                 conn.write(_('You have no aliases.\n'))
             else:
                 conn.write(_('Aliases:\n'))
-                for (k, v) in conn.user.aliases.iteritems():
+                for (k, v) in conn.user.aliases.items():
                     conn.write(_("%s -> %s\n") % (k, v))
             return
 
@@ -135,13 +135,13 @@ class Alias(Command):
 @ics_command('games', 'o', admin.Level.user)
 class Games(Command):
     def run(self, args, conn):
-        if not game.games.values():
+        if not list(game.games.values()):
             conn.write(_('There are no games in progress.\n'))
             return
         if args[0] is not None:
             conn.write('TODO: games PARAM\n')
         count = 0
-        for g in game.games.values():
+        for g in list(game.games.values()):
             count += 1
         conn.write(ngettext('  %(count)d game displayed (of %(total)3d in progress).\n', '  %(count)d games displayed (of %(total)d in progress).\n', count) % {'count': count, 'total': len(game.games)})
 

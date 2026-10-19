@@ -58,7 +58,7 @@ def find_matching(seek):
     # Would that lead to starvation of seeks with a high number?
     auto_matches = []
     manual_matches = []
-    for s in seeks.values():
+    for s in list(seeks.values()):
         if seek.matches(s):
             if (not seek.a.censor_or_noplay(s.a) and
                     s.check_formula(seek.a) and seek.check_formula(s.a)):

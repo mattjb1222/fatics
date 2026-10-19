@@ -23,12 +23,13 @@ and insert into the database in the format the server expects.  The
 EPD file I use comes from scid by way of its eco2epd tool. """
 
 import sys
+import os
 import MySQLdb
 import re
 
-import __builtin__
-__builtin__.__dict__['N_'] = lambda s: s
-__builtin__.__dict__['A_'] = lambda s: s
+import builtins
+builtins.__dict__['N_'] = lambda s: s
+builtins.__dict__['A_'] = lambda s: s
 
 sys.path.insert(0, 'src/')
 import speed_variant
@@ -39,33 +40,32 @@ nic_file = 'data/nic999.idx'
 
 def main():
     db = MySQLdb.connect(host='localhost', db='chess',
-        read_default_file="~/.my.cnf")
+        read_default_file=os.path.expanduser('~/.my.cnf'))
     cursor = db.cursor()
 
-    f = open(epd_file, 'r')
+    f = open(epd_file, 'r', encoding='iso-8859-1')
 
     cursor.execute("""DELETE FROM eco""")
     count = 0
     txt = None
     for line in f:
-        line = line.decode('iso-8859-1').encode('utf-8')
         line = line.strip()
         if not line or line.startswith('#'):
             continue
         m = re.match(r'(.+) +eco +([A-Z]\d\d\S*) +(.+);', line)
         if not m:
-            print 'failed to match: %s' % line
+            print('failed to match: %s' % line)
         assert(m)
-        (fen, eco, long) = (m.group(1), m.group(2), m.group(3))
+        (fen, eco, int) = (m.group(1), m.group(2), m.group(3))
         pos = variant.chess.Position(fen + ' 0 1')
         cursor.execute("""INSERT INTO eco SET eco=%s, long_=%s, hash=%s, fen=%s""",
-            (eco,long,pos.hash,fen))
+            (eco,int,pos.hash,fen))
         count += 1
-    print 'imported %d eco codes' % count
+    print('imported %d eco codes' % count)
 
     cursor.execute("""DELETE FROM nic""")
     count = 0
-    f = open(nic_file, 'r')
+    f = open(nic_file, 'r', encoding='iso-8859-1')
     fen = None
     for line in f:
         line = line.strip()
@@ -83,11 +83,11 @@ def main():
                 cursor.execute("""INSERT INTO nic SET nic=%s, hash=%s, fen=%s""",
                     (nic,pos.hash,fen))
             except:
-                print 'dupe for %s' % nic
+                print('dupe for %s' % nic)
                 raise
             count += 1
             fen = None
-    print 'imported %d nic codes' % count
+    print('imported %d nic codes' % count)
     
 if __name__ == "__main__":
     main()

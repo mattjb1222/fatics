@@ -35,7 +35,7 @@ class ChannelError(Exception):
 class Channel(object):
     def __init__(self, params):
         self.id = params['channel_id']
-        assert(type(self.id) == type(1) or type(self.id) == type(1L))
+        assert(type(self.id) == type(1) or type(self.id) == type(1))
         self.name = params['name']
         self.desc = params['descr']
         if params['topic'] is None:
@@ -72,14 +72,17 @@ class Channel(object):
     def log_on(self, user):
         self.online.append(user)
         if self.topic:
-            if user.last_logout is None or self.topic_when > user.last_logout:
+            if (user.last_logout is None
+                    or self.topic_when is None
+                    or self.topic_when > user.last_logout):
                 self.show_topic(user)
 
     def show_topic(self, user):
         if self.topic:
+            when = (user.format_datetime(self.topic_when)
+                   if self.topic_when else '')
             user.write_('\nTOPIC(%d): *** %s (%s at %s) ***\n',
-                (self.id, self.topic, self.topic_who_name,
-                user.format_datetime(self.topic_when)))
+                (self.id, self.topic, self.topic_who_name, when))
         else:
             user.write_('There is no topic for channel %d.\n', (self.id,))
 
@@ -108,6 +111,7 @@ class Channel(object):
         if topic in ['-', '.']:
             # clear the topic
             self.topic = None
+            self.topic_when = None
             db.channel_del_topic(self.id)
             for u in self.online:
                 if u.hears_channels():
@@ -236,7 +240,7 @@ class ChannelList(object):
             self.all[id] = Channel(ch)
 
     def __getitem__(self, key):
-        assert(type(key) == type(1) or type(key) == type(1L))
+        assert(type(key) == type(1) or type(key) == type(1))
         if key < 0 or key > CHANNEL_MAX:
             raise KeyError
         try:

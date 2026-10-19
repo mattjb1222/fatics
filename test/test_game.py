@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestGame(Test):
     def test_game_basics(self):
@@ -437,7 +437,7 @@ class TestRefresh(Test):
         self.expect('Creating: ', t)
         self.expect('Creating: ', t2)
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 1 7 9 39 39 420 420 1 none (0:00) none 0 0 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 1 7 9 39 39 420 420 1 none (0:00) none 0 1 0', t)
         self.expect('<12> ', t2)
 
         t.write('refresh\n')
@@ -451,18 +451,18 @@ class TestRefresh(Test):
         t3.write('re 999\n')
         self.expect('There is no such game', t3)
         t3.write('re 1\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin -3 7 9 39 39 420 420 1 none (0:00) none 0 0 0', t3)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin -3 7 9 39 39 420 420 1 none (0:00) none 0 1 0', t3)
         t3.write('re nosuchuser\n')
         self.expect('No player named "nosuchuser" is online', t3)
         t3.write('re admi\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin -3 7 9 39 39 420 420 1 none (0:00) none 0 0 0', t3)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin -3 7 9 39 39 420 420 1 none (0:00) none 0 1 0', t3)
 
         t3.write('o 1\n')
         self.expect('<12> ', t3)
         t3.write('REF GUESTDEF\n')
         self.expect('GuestDEFG is not playing or examining', t3)
         t3.write('ref\n')
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 0 7 9 39 39 420 420 1 none (0:00) none 0 0 0', t3)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCD admin 0 7 9 39 39 420 420 1 none (0:00) none 0 1 0', t3)
         self.close(t3)
 
         self.close(t)
@@ -499,27 +499,27 @@ class TestMoves(Test):
 
         t.write('moves\n')
         self.expect('Movelist for game 1:\r\n\r\nGuestABCD (++++) vs. admin (----) --- ', t)
-        self.expect('''Move  GuestABCD               admin\r\n----  ---------------------   ---------------------\r\n  1.  e4      (0:00.000)      \r\n      {Still in progress} *''', t)
+        self.expect_re(r'Move  GuestABCD\s+admin\r\n----  ---------------------   ---------------------\r\n  1\.  e4      \(0:00\.0\d\d\)      \r\n      \{Still in progress\} \*', t)
 
         t2.write('c5\n')
         self.expect('<12> ', t)
         self.expect('<12> ', t2)
 
         t2.write('moves\n')
-        self.expect('''Move  GuestABCD               admin\r\n----  ---------------------   ---------------------\r\n  1.  e4      (0:00.000)      c5      (0:00.000)\r\n      {Still in progress} *''', t2)
+        self.expect_re(r'Move  GuestABCD\s+admin\r\n----  ---------------------   ---------------------\r\n  1\.  e4      \(0:00\.0\d\d\)      c5      \(0:00\.0\d\d\)\r\n      \{Still in progress\} \*', t2)
 
         t3 = self.connect_as_guest()
         t3.write('set style 12\n')
         t3.write('iset ms 1\n')
         t3.write('moves 1\n')
-        self.expect('''Move  GuestABCD               admin\r\n----  ---------------------   ---------------------\r\n  1.  e4      (0:00.000)      c5      (0:00.000)\r\n      {Still in progress} *''', t3)
+        self.expect_re(r'Move  GuestABCD\s+admin\r\n----  ---------------------   ---------------------\r\n  1\.  e4      \(0:00\.0\d\d\)      c5      \(0:00\.0\d\d\)\r\n      \{Still in progress\} \*', t3)
         t3.write('moves admi\n')
-        self.expect('''Move  GuestABCD               admin\r\n----  ---------------------   ---------------------\r\n  1.  e4      (0:00.000)      c5      (0:00.000)\r\n      {Still in progress} *''', t3)
+        self.expect_re(r'Move  GuestABCD\s+admin\r\n----  ---------------------   ---------------------\r\n  1\.  e4      \(0:00\.0\d\d\)      c5      \(0:00\.0\d\d\)\r\n      \{Still in progress\} \*', t3)
         t3.write('moves\n')
         self.expect('You are not playing, examining, or observing a game', t3)
         t3.write('o 1\n')
         t3.write('moves\n')
-        self.expect('''Move  GuestABCD               admin\r\n----  ---------------------   ---------------------\r\n  1.  e4      (0:00.000)      c5      (0:00.000)\r\n      {Still in progress} *''', t3)
+        self.expect_re(r'Move  GuestABCD\s+admin\r\n----  ---------------------   ---------------------\r\n  1\.  e4      \(0:00\.0\d\d\)      c5      \(0:00\.0\d\d\)\r\n      \{Still in progress\} \*', t3)
         self.close(t3)
 
         t.write('abo\n')
@@ -646,27 +646,27 @@ class TestMoretime(Test):
         t3.write('o admin\n')
         self.expect('admin (----) TestPlayer (----)', t3)
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 6 10 39 39 360 360 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 6 10 39 39 360 360 1 none (0:00) none 1 0 0', t2)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 0 6 10 39 39 360 360 1 none (0:00) none 0 0 0', t3)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 6 10 39 39 360 360 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 6 10 39 39 360 360 1 none (0:00) none 1 1 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 0 6 10 39 39 360 360 1 none (0:00) none 0 1 0', t3)
 
         t.write('moretime 40\n')
         self.expect("You have added 40 seconds to TestPlayer's clock.", t)
         self.expect("admin has added 40 seconds to your clock.", t2)
         self.expect("admin has added 40 seconds to TestPlayer's clock.", t3)
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 6 10 39 39 360 400 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 6 10 39 39 360 400 1 none (0:00) none 1 0 0', t2)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 0 6 10 39 39 360 400 1 none (0:00) none 0 0 0', t3)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 6 10 39 39 360 400 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 6 10 39 39 360 400 1 none (0:00) none 1 1 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 0 6 10 39 39 360 400 1 none (0:00) none 0 1 0', t3)
 
         t2.write('moretime 5\n')
         self.expect("You have added 5 seconds to admin's clock.", t2)
         self.expect("TestPlayer has added 5 seconds to your clock.", t)
         self.expect("TestPlayer has added 5 seconds to admin's clock.", t3)
 
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 6 10 39 39 365 400 1 none (0:00) none 0 0 0', t)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 6 10 39 39 365 400 1 none (0:00) none 1 0 0', t2)
-        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 0 6 10 39 39 365 400 1 none (0:00) none 0 0 0', t3)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 1 6 10 39 39 365 400 1 none (0:00) none 0 1 0', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer -1 6 10 39 39 365 400 1 none (0:00) none 1 1 0', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 admin TestPlayer 0 6 10 39 39 365 400 1 none (0:00) none 0 1 0', t3)
 
         t.write('moretime 40000\n')
         self.expect('Invalid number of seconds.', t)

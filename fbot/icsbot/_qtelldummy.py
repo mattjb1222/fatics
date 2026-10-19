@@ -22,7 +22,7 @@ class QtellDummy():
         new_data = []
         
         for line in data:
-            for i in xrange(0, len(line)/self.width + 1):
+            for i in range(0, len(line)//self.width + 1):
                 new_data += [line[self.width*i: self.width*(i+1)]]
         
         handle = usr['handle']

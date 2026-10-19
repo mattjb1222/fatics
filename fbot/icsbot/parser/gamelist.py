@@ -100,7 +100,7 @@ class GameList(object):
         variants = {'n': 'non standard', 'w': 'wild', 'b': 'blitz', 's': 'standard', 'l': 'lightning', 'B': 'bughouse', 'x': 'atomic', 'z': 'crazyhouse', 'L': 'losers', 'S': 'suicide', 'u': 'untimed'}
         M = matches.groupdict()
 
-        if M.has_key('data'):
+        if 'data' in M:
             data = M['data']
             r = re.compile('^\s*(?P<gamenumber>[\d]+) +(?P<w_rating>(?:\d+|\+{4,4}|-{4,4})) (?P<white>[a-zA-Z]+) +(?P<b_rating>(?:\d+|\+{4,4}|-{4,4})) (?P<black>[a-zA-Z]+) +\[(?P<private>(?:p| ))(?P<variant>[A-z])(?P<rated>(?:r|u)) *(?P<time>[\d]+) +(?P<inc>[\d]+)\][^(]+\( ?(?P<w_material>[\d]+)- ?(?P<b_material>[\d]+)\) .: *(?P<move>[\d]+)\s*$', re.MULTILINE)
             
@@ -112,14 +112,14 @@ class GameList(object):
             white = {}
             black = {}
             for handle in handles:
-                if white.has_key(handle[:11].lower()):
+                if handle[:11].lower() in white:
                     # In this case we cannot uniquely say who is playing the
                     # game. We will just drop those rare games lateron.
                     white[handle[:11].lower()] = None
                 else:
                     white[handle[:11].lower()] = handle
                 
-                if black.has_key(handle[:10].lower()):
+                if handle[:10].lower() in black:
                     # In this case we cannot uniquely say who is playing the
                     # game. We will just drop those rare games lateron.
                     black[handle[:10].lower()] = None
@@ -136,7 +136,7 @@ class GameList(object):
                 
                 d['white'] = white[match[2].lower()]
                 if d['white'] is None:
-                    print 'Warning: Game %s is considered not existent because of ambiguous whites handle: %s' % (d['game'], match[2])
+                    print('Warning: Game %s is considered not existent because of ambiguous whites handle: %s' % (d['game'], match[2]))
                     continue
                 
                 if match[3] == '++++' or match[3] == '----':
@@ -146,7 +146,7 @@ class GameList(object):
                 
                 d['black'] = black[match[4].lower()]
                 if d['black'] is None:
-                    print 'Warning: Game %s is considered not existent because of ambiguous blacks handle: %s' % (d['game'], match[4])
+                    print('Warning: Game %s is considered not existent because of ambiguous blacks handle: %s' % (d['game'], match[4]))
                     continue  
                 
                 if matches[5] == 'p':

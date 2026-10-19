@@ -20,7 +20,7 @@ import time
 
 from datetime import datetime
 
-from test import *
+from .test import *
 
 class TestNews(Test):
     def test_news_guest(self):

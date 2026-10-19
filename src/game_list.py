@@ -39,7 +39,7 @@ class GameList(object):
     def __len__(self):
         return len(self.games)
 
-    def __nonzero__(self):
+    def __bool__(self):
         return bool(self.games)
 
     def __iter__(self):

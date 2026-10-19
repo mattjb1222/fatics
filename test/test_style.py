@@ -16,7 +16,7 @@
 # along with FatICS.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from test import *
+from .test import *
 
 class TestStyle1(Test):
     @with_player('testplayer')
@@ -34,7 +34,7 @@ class TestStyle1(Test):
         self.expect('Creating: ', t2)
 
         exp_text = '''
-Game 1: testplayer (----) admin (----) rated lightning crazyhouse 1 0
+Game 1: testplayer (----) admin (----) rated crazyhouse 1 0
 
 Black holding: []
        ---------------------------------
@@ -60,7 +60,7 @@ White holding: []'''
             self.expect(line.replace('\n', '\r\n'), t)
 
         exp_text = '''
-Game 1: testplayer (----) admin (----) rated lightning crazyhouse 1 0
+Game 1: testplayer (----) admin (----) rated crazyhouse 1 0
 
 White holding: []
        ---------------------------------
@@ -88,7 +88,7 @@ Black holding: []'''
         t.write('e4\n')
 
         exp_text = '''
-Game 1: testplayer (----) admin (----) rated lightning crazyhouse 1 0
+Game 1: testplayer (----) admin (----) rated crazyhouse 1 0
 
 Black holding: []
        ---------------------------------
@@ -114,7 +114,7 @@ White holding: []'''
             self.expect(line.replace('\n', '\r\n'), t)
 
         exp_text = '''
-Game 1: testplayer (----) admin (----) rated lightning crazyhouse 1 0
+Game 1: testplayer (----) admin (----) rated crazyhouse 1 0
 
 White holding: []
        ---------------------------------
@@ -169,21 +169,24 @@ class TestStyle12(Test):
         self.expect('Creating: ', t)
         self.expect('Creating: ', t2)
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 60000 60000 1 none (0:00.000) none 0 0 0\r\n', t)
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 1 none (0:00) none 1 0 0\r\n', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 60000 60000 1 none (0:00.000) none 0 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 1 none (0:00) none 1 1 0\r\n', t2)
 
         t.write('d4\n')
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60000 60000 1 P/d2-d4 (0:00.000) d4 0 0 0\r\n', t)
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 60 60 1 P/d2-d4 (0:00) d4 1 0 0\r\n', t2)
+        m2 = self.expect_re(r'<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 (\d{5}) (\d{5}) 1 P/d2-d4 \(0:00\.00\d\) d4 0 1 0', t)
+        # on fast machines the move may tick away < 1ms of clock
+        self.assertTrue(59990 <= int(m2.group(1)) <= 60000)
+        self.assertTrue(60000 <= int(m2.group(2)) <= 60001)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- ---P---- -------- PPP-PPPP RNBQKBNR B -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 60 60 1 P/d2-d4 (0:00) d4 1 1 0\r\n', t2)
 
         t2.write('d5\n')
-        #m = self.expect_re(r'\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 (\d+) 60000 2 P/d7-d5 (0:00.000) d5 0 1 0\r\n', t)
-        m = self.expect_re(r'\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 (\d+)', t)
+        #m = self.expect_re(r'<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 (\d+) 60000 2 P/d7-d5 (0:00.000) d5 0 1 0\r\n', t)
+        m = self.expect_re(r'<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin 1 1 0 39 39 (\d+)', t)
         # on slow machines a time may tick away
         # XXX this should really only be done with timeseal
-        self.assert_(59990 <= int(m.group(1)) <= 60000)
-        self.expect('\r\n<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t2)
+        self.assertTrue(59990 <= int(m.group(1)) <= 60000)
+        self.expect('<12> rnbqkbnr ppp-pppp -------- ---p---- ---P---- -------- PPP-PPPP RNBQKBNR W -1 1 1 1 1 0 1 testplayer admin -1 1 0 39 39 60 60 2 P/d7-d5 (0:00) d5 1 1 0\r\n', t2)
 
         self.close(t)
         self.close(t2)
@@ -203,8 +206,8 @@ class TestStyle12(Test):
         self.expect('Creating: ', t)
         self.expect('Creating: ', t2)
 
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCDEFGHIJKL GuestMNOPQRSTUVWX 1 1 0 39 39 60000 60000 1 none (0:00.000) none 0 0 0\r\n', t)
-        self.expect('\r\n<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCDEFGHIJKL GuestMNOPQRSTUVWX -1 1 0 39 39 60 60 1 none (0:00) none 1 0 0\r\n', t2)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCDEFGHIJKL GuestMNOPQRSTUVWX 1 1 0 39 39 60000 60000 1 none (0:00.000) none 0 1 0\r\n', t)
+        self.expect('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 GuestABCDEFGHIJKL GuestMNOPQRSTUVWX -1 1 0 39 39 60 60 1 none (0:00) none 1 1 0\r\n', t2)
 
         t.write('abort\n')
         self.expect('aborted', t2)

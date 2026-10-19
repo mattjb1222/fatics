@@ -24,7 +24,7 @@ import subprocess
 import time
 import pexpect
 
-from test import *
+from .test import *
 
 zipseal_prog = '../timeseal/zipseal'
 wine_prog = '/usr/bin/wine'
@@ -66,7 +66,7 @@ class TestZipseal(Test):
         process.expect_exact('Zipseal:     On')
 
         process.send('''t admin Les naïfs ægithales hâtifs pondant à Noël où il gèle sont sûrs d'être déçus et de voir leurs drôles d'œufs abîmés.\n''')
-        process.expect_exact('''tells you: Les naïfs ægithales hâtifs pondant à Noël où il gèle sont sûrs d'être déçus et de voir leurs drôles d'œufs abîmés''')
+        process.expect_exact(('''tells you: Les naïfs ægithales hâtifs pondant à Noël où il gèle sont sûrs d'être déçus et de voir leurs drôles d'œufs abîmés''').encode('utf-8'))
 
 
         self._close(process)
@@ -117,7 +117,7 @@ class TestZipseal(Test):
         t.expect_exact('nowrap set.')
 
         t.send('t admin Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.\n')
-        t.expect_exact('admin(*) tells you: Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.')
+        t.expect_exact('admin(*) tells you: Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.Μπορώ να φάω σπασμένα γυαλιά χωρίς να πάθω τίποτα.'.encode('utf-8'))
 
         self._close(t)
 
@@ -140,7 +140,7 @@ class TestZipsealWindows(Test):
         process.expect_exact('Finger of admin')
         process.expect_exact('Zipseal:     On')
         process.send('t admin В чащах юга жил-был цитрус? Да, но фальшивый экземпляр! ёъ.\n')
-        process.expect_exact('admin(*) tells you: В чащах юга жил-был цитрус? Да, но фальшивый экземпляр! ёъ.')
+        process.expect_exact('admin(*) tells you: В чащах юга жил-был цитрус? Да, но фальшивый экземпляр! ёъ.'.encode('utf-8'))
 
         process.send('quit\n')
         process.expect_exact('Thank you for using')

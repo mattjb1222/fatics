@@ -38,7 +38,7 @@ nomaterial_re = re.compile(r'''[nN]either\s+player\s+has\s+mating\s+material\s*$
 class PgnError(Exception):
     def __init__(self, reason):
         self.reason = reason
-        print reason
+        print(reason)
 
 class PgnMove(object):
     def __init__(self, text, decorator):

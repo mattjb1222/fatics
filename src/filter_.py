@@ -28,7 +28,7 @@ def add_filter(pattern, conn):
     # because it could be reasonable to block overlapping ranges, such as
     # when expiring filters are implemented.
     try:
-        net = IPNetwork(pattern, implicit_prefix=False).cidr
+        net = IPNetwork(pattern).cidr
     except:
         raise list_.ListError(A_('Invalid filter pattern.\n'))
     if net in filters:
@@ -39,7 +39,7 @@ def add_filter(pattern, conn):
 
 def remove_filter(pattern, conn):
     try:
-        net = IPNetwork(pattern, implicit_prefix=False).cidr
+        net = IPNetwork(pattern).cidr
     except:
         raise list_.ListError(A_('Invalid filter pattern.\n'))
     try:

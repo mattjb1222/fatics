@@ -16,7 +16,10 @@ case "$1" in
     ;;
   test)
     echo "Running test suite...."
-    trial -e test/
+    # Modern trial cannot take a directory argument, and the stdlib 'test'
+    # package shadows ours, so run via the fat_tests alias.
+    [ -e fat_tests ] || ln -s test fat_tests
+    PYTHONPATH=".:$PWD/test" trial fat_tests
     ;;
   restart)
     $0 stop

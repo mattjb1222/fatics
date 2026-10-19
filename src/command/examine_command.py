@@ -20,7 +20,7 @@
 import examine
 import bpgn
 
-from command import *
+from .command import *
 
 @ics_command('examine', 'on')
 class Examine(Command):

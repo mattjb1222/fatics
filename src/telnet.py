@@ -33,32 +33,32 @@ followed the server and not the RFC."""
 
 import textwrap
 
-from zope.interface import implements
+from zope.interface import implementer
 from twisted.internet import protocol, interfaces
 
 import utf8
 
 # telnet codes
-ECHO = chr(1)
-TM = chr(6) # timing mark
+ECHO = 1
+TM = 6 # timing mark
 # Note that we violate RFC 854, which says: "On a host that never sends the
 # Telnet command Go Ahead (GA), the Telnet Server MUST attempt to negotiate
 # the Suppress Go Ahead option...." We only send WILL SGA in response to
 # DO SGA from the client.
-SGA = chr(3) # supress go-ahead
-IP = chr(244) # interrupt process
-AYT = chr(246) # are you there?
-EL = chr(248) # erase line
-WILL = chr(251)
-WONT = chr(252)
-DO = chr(253)
-DONT = chr(254)
-IAC = chr(255) # interpret as command
+SGA = 3 # supress go-ahead
+IP = 244 # interrupt process
+AYT = 246 # are you there?
+EL = 248 # erase line
+WILL = 251
+WONT = 252
+DO = 253
+DONT = 254
+IAC = 255 # interpret as command
 
 BS = chr(8) # backspace
 
 class TelnetTransport(protocol.Protocol):
-    implements(interfaces.ITransport)
+    implementer(interfaces.ITransport)
     protocolFactory = None
     protocol = None
     disconnecting = False
@@ -85,38 +85,38 @@ class TelnetTransport(protocol.Protocol):
         self.transport.write(bytes)
 
     def do(self, option):
-        self._write(IAC + DO + option)
+        self._write(bytes([IAC, DO, option]))
 
     def dont(self, option):
-        self._write(IAC + DONT + option)
+        self._write(bytes([IAC, DONT, option]))
 
     def will(self, option):
-        self._write(IAC + WILL + option)
+        self._write(bytes([IAC, WILL, option]))
 
     def wont(self, option):
-        self._write(IAC + WONT + option)
+        self._write(bytes([IAC, WONT, option]))
 
     def dataReceived(self, data):
         appDataBuffer = []
 
-        for b in data:
+        for b in data:  # b is an int in Python 3
             if self.state == 'data':
                 if b == IAC:
                     self.state = 'escaped'
-                elif b == '\r':
+                elif b == 13:  # '\r'
                     self.state = 'newline'
-                elif b == '\t':
-                    appDataBuffer.append('    ')
+                elif b == 9:  # '\t'
+                    appDataBuffer.append(b'    ')
                 else:
-                    appDataBuffer.append(b)
+                    appDataBuffer.append(bytes([b]))
             elif self.state == 'escaped':
                 if b == IAC:
-                    appDataBuffer.append(b)
+                    appDataBuffer.append(bytes([b]))
                     self.state = 'data'
                 elif b in (IP, AYT, EL):
                     self.state = 'data'
                     if appDataBuffer:
-                        self.applicationDataReceived(''.join(appDataBuffer))
+                        self.applicationDataReceived(b''.join(appDataBuffer))
                         del appDataBuffer[:]
                     self.commandReceived(b, None)
                 elif b in (WILL, WONT, DO, DONT):
@@ -129,15 +129,15 @@ class TelnetTransport(protocol.Protocol):
                 command = self.command
                 del self.command
                 if appDataBuffer:
-                    self.applicationDataReceived(''.join(appDataBuffer))
+                    self.applicationDataReceived(b''.join(appDataBuffer))
                     del appDataBuffer[:]
                 self.commandReceived(command, b)
             elif self.state == 'newline':
                 self.state = 'data'
-                if b == '\n':
-                    appDataBuffer.append('\n')
-                elif b == '\0':
-                    appDataBuffer.append('\r')
+                if b == 10:  # '\n'
+                    appDataBuffer.append(b'\n')
+                elif b == 0:  # '\0'
+                    appDataBuffer.append(b'\r')
                 elif b == IAC:
                     # IAC isn't really allowed after \r, according to the
                     # RFC, but handling it this way is less surprising than
@@ -149,15 +149,15 @@ class TelnetTransport(protocol.Protocol):
                     # CR NUL another (cursor to first column).  Absent the
                     # NUL, it still makes sense to interpret this as CR and
                     # then apply all the usual interpretation to the IAC.
-                    appDataBuffer.append('\r')
+                    appDataBuffer.append(b'\r')
                     self.state = 'escaped'
                 else:
-                    appDataBuffer.append('\r' + b)
+                    appDataBuffer.append(b'\r' + bytes([b]))
             else:
                 raise ValueError("should not happen: unknown state")
 
         if appDataBuffer:
-            self.applicationDataReceived(''.join(appDataBuffer))
+            self.applicationDataReceived(b''.join(appDataBuffer))
 
 
     def commandReceived(self, command, argument):
@@ -217,11 +217,11 @@ class TelnetTransport(protocol.Protocol):
     def _escape(self, data):
         if self.compatibility:
             data = utf8.utf8_to_ascii(data)
-            data = data.replace('\n', '\n\r')
+            data = data.replace(b'\n', b'\n\r')
         else:
             # escape telnet IAC
-            data = data.replace('''\xff''', '''\xff\xff''')
-            data = data.replace('\n', '\r\n')
+            data = data.replace(b'\xff', b'\xff\xff')
+            data = data.replace(b'\n', b'\r\n')
         return data
 
     def enableWrapping(self, width):
@@ -238,6 +238,8 @@ class TelnetTransport(protocol.Protocol):
         self._wrapper = None
 
     def write(self, data, wrap=True):
+        if isinstance(data, str):
+            data = data.encode('utf-8')
         if wrap and self._wrapper:
             # we have to split the text into lines before
             # wrapping
