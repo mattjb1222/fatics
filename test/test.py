@@ -181,7 +181,7 @@ class Test(unittest.TestCase):
         # will have to be redone when 'who' output is finished
         for _ in range(40):
             try:
-                m = self.expect_re(r'^(.*?)\r\n', t, timeout=5)
+                m = self.expect_re(r'^(.*?)\r\n', t, timeout=15)
             except unittest.FailTest:
                 # timed out waiting for a line; re-issue 'who' and
                 # continue from the current (partial) snapshot
@@ -204,15 +204,23 @@ class Test(unittest.TestCase):
     def _nuke_all_players(self):
         try:
             t = self.connect_as_admin()
-            for _ in range(3):
+        except unittest.FailTest:
+                return
+        try:
+            for i in range(5):
                 # nuke may not be instantaneous for players in games,
                 # so re-check and nuke again until 'who' is clean
                 players = self._who_players(t)
+                # a failed/partial 'who' read must not look clean:
+                # require a non-empty list (admin always appears)
                 for name in players:
                     if name != 'admin':
                         t.write('nuke %s\n' % name)
-                if all(p == 'admin' for p in players):
+                        t.read_until('Nuked: %s' % name, 15)
+                if players and all(p == 'admin' for p in players):
                     break
+                import time
+                time.sleep(1)
             self.close(t)
         except unittest.FailTest:
             # this is only called from within an exception handler, so
@@ -221,18 +229,25 @@ class Test(unittest.TestCase):
 
     def tearDown(self):
         """ Make sure that all tests shut down cleanly. """
-        t = self.connect_as_guest('GuestWXYZ')
-        t.write('who\n')
         try:
-            self.expect('1 player displayed.', t)
+            self._probe_clean()
+            return
         except unittest.FailTest:
             # The test left open connections lying around.
             # Nuke all players to give the remaining tests a clean
             # environment.
-            self.close(t)
             self._nuke_all_players()
-            raise
+            # the nuke may not be instantaneous (e.g. a previous test's
+            # deferred tearDown may still be nuking), so re-probe before
+            # declaring failure
+            import time
+            time.sleep(2)
+            self._probe_clean()
 
+    def _probe_clean(self):
+        t = self.connect_as_guest('GuestWXYZ')
+        t.write('who\n')
+        self.expect('1 player displayed.', t)
         self.close(t)
 
 # test decorators

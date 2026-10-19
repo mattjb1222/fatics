@@ -29,7 +29,12 @@ import sys
 import time
 
 from twisted.internet import epollreactor
-epollreactor.install()
+try:
+    # only needed when this module runs standalone; under trial the
+    # reactor is already installed
+    epollreactor.install()
+except Exception:
+    pass
 
 from twisted.trial import unittest
 from twisted.internet import protocol, defer

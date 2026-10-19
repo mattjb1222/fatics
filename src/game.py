@@ -210,7 +210,7 @@ class Game(object):
         for u in self.observers:
             self.send_board(u)
 
-    def send_board(self, u, isolated=False):
+    def send_board(self, u, isolated=False, as_observer=False):
         if u.vars['style'] == 12:
             if (self.gtype == PLAYED and self.variant.name == 'chess' and
                     u.session.ivars['compressmove'] and
@@ -218,7 +218,17 @@ class Game(object):
                     not isolated):
                 out = self.variant.to_deltaboard(u)
             else:
-                out = self.variant.to_style12(u)
+                # render the board as if the user were an observer (e.g.
+                # when a bughouse player views the partner board)
+                added = False
+                if as_observer and u not in self.observers:
+                    self.observers.add(u)
+                    added = True
+                try:
+                    out = self.variant.to_style12(u)
+                finally:
+                    if added:
+                        self.observers.remove(u)
         else:
             # style 1, the default
             out = self.variant.to_style1(u)
@@ -523,21 +533,7 @@ class PlayedGame(Game):
         # with FICS is more important than being logical.
         # not sure about the m and n; maybe they are a version number?
         # TODO: add info about clock style, variant/speed to gameinfo string
-        if self.speed_variant.variant.name == 'chess':
-            vname = self.speed_variant.speed.name
-        else:
-            # XXX how do we convey the speed and variant, when the current
-            # format only gives one field?
-            vname = self.speed_variant.variant.name
-        # FICS clients (e.g. Thief) parse <g1> positionally: field 1 must be
-        # "Rated" or "Unrated" (Thief's bFound gate) or the variant block is
-        # skipped entirely, and field 2 is compared against "bughouse"/
-        # "crazyhouse" to set the game type, which gates whether the drop-piece
-        # buffer is shown. So put the rated/unrated word in field 1, the variant
-        # name in field 2, the game number in field 3, and the player names in
-        # fields 4/5, while keeping the legacy key=value fields as trailing fields
-        # so nothing else is lost.
-        self.gameinfo_str = '\n<g1> %s %s %d %s %s %s %d %d %d p=%d u=%d,%d it=%d,%d i=%d,%d pt=0 rt=%s,%s ts=%d,%d m=2 n=0\n' % (("Rated" if self.rated else "Unrated"), vname, self.number, self.white.name, self.black.name, self.black_rating.gameinfo_str(), self.initial_secs, self.inc, self.rated, self.private, self.white.is_guest, self.black.is_guest, self.initial_secs, self.inc, self.initial_secs, self.inc, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal())
+        self._build_gameinfo_str()
         if self.white.session.ivars['gameinfo']:
             self.white.write_nowrap(self.gameinfo_str)
         if self.black.session.ivars['gameinfo']:
@@ -607,6 +603,43 @@ class PlayedGame(Game):
         if p.has_timeseal():
             p.session.ping(for_move=True)
         self.send_boards()
+
+    def _build_gameinfo_str(self):
+        # m/n are the board count/index for bughouse (m=2 n=0/1); other
+        # variants are single-board (m=1 n=0).  bug_link is set after
+        # __init__ (by match.py), so _build_gameinfo_str is called again
+        # once the link exists (see update_gameinfo).
+        if self.speed_variant.variant.name == 'chess':
+            vname = self.speed_variant.speed.name
+        else:
+            # XXX how do we convey the speed and variant, when the current
+            # format only gives one field?
+            vname = self.speed_variant.variant.name
+        # FICS clients (e.g. Thief) parse <g1> positionally: field 1 must be
+        # "Rated" or "Unrated" (Thief's bFound gate) or the variant block is
+        # skipped entirely, and field 2 is compared against "bughouse"/
+        # "crazyhouse" to set the game type, which gates whether the drop-piece
+        # buffer is shown. So put the rated/unrated word in field 1, the variant
+        # name in field 2, the game number in field 3, and the player names in
+        # fields 4/5, while keeping the legacy key=value fields as trailing fields
+        # so nothing else is lost.
+        if self.bug_link is not None:
+            boards = 2
+            # order the two boards deterministically by game number
+            board_n = 1 if self.number > self.bug_link.number else 0
+        else:
+            boards = 1
+            board_n = 0
+        self.gameinfo_str = '\n<g1> %s %s %d %s %s %s %d %d %d p=%d u=%d,%d it=%d,%d i=%d,%d pt=0 rt=%s,%s ts=%d,%d m=%d n=%d\n' % (("Rated" if self.rated else "Unrated"), vname, self.number, self.white.name, self.black.name, self.black_rating.gameinfo_str(), self.initial_secs, self.inc, self.rated, self.private, self.white.is_guest, self.black.is_guest, self.initial_secs, self.inc, self.initial_secs, self.inc, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal(), boards, board_n)
+
+    def update_gameinfo(self):
+        """ Rebuild and re-send the gameinfo string (e.g. after a bughouse
+        partner link is established, so m/n are correct). """
+        self._build_gameinfo_str()
+        if self.white.session.ivars['gameinfo']:
+            self.white.write_nowrap(self.gameinfo_str)
+        if self.black.session.ivars['gameinfo']:
+            self.black.write_nowrap(self.gameinfo_str)
 
     def _resume(self, adj, a, b):
         """ Resume an adjourned game. """
@@ -826,6 +859,13 @@ class PlayedGame(Game):
             # players an updated board right away instead of waiting
             # for their next move
             self.bug_link.send_boards()
+            # send the partner board's lines to *this* board's players
+            # and observers too (FICS shows both boards to everyone);
+            # render with observer orientation (no flip)
+            for p in self.players:
+                self.bug_link.send_board(p, as_observer=True)
+            for u in self.observers:
+                self.bug_link.send_board(u, as_observer=True)
             # a capture on this board changes the linked board's holding,
             # and a drop on either board changes that board's own holding.
             # Send both boards' holdings to keep the players (and their
@@ -887,10 +927,30 @@ class PlayedGame(Game):
 
     def observe(self, u):
         """ For some reason it seems that FICS only sends gameinfo strings
-        for played games, not examined games. """
+        for played games, not examined games.  In bughouse, observing one
+        board automatically observes the partner board (bug_link) too, so
+        clients (e.g. Thief) see both boards. """
         super(PlayedGame, self).observe(u)
         if u.session.ivars['gameinfo']:
             u.write_nowrap(self.gameinfo_str)
+        if (self.bug_link is not None and self.bug_link.is_active and
+                u not in self.bug_link.observers):
+            # guard against the ping-pong recursion (the link is
+            # bidirectional, so the partner's observe() would call
+            # observe() on this game again)
+            self.bug_link.observe(u)
+            if u.session.ivars['gameinfo']:
+                u.write_nowrap(self.bug_link.gameinfo_str)
+
+    def unobserve(self, u):
+        # idempotent: a user may be unobserved from both linked boards
+        # (session.close() iterates session.observed, which contains both)
+        if u in self.observers:
+            super(PlayedGame, self).unobserve(u)
+        # also unobserve the partner board (bug_link); the recursive call
+        # is safe because it is idempotent (no ping-pong)
+        if self.bug_link is not None and u in self.bug_link.observers:
+            self.bug_link.unobserve(u)
 
     def result(self, msg, result_code):
         # guard against a double save: if this game already ended (e.g. a

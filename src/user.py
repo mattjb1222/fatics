@@ -78,17 +78,30 @@ class BaseUser(object):
 
     def log_off(self):
         # re-entry safe: a second log_off (e.g. an async connectionLost
-        # after an already-run log_off) must not re-run the cleanup
+        # after an already-run log_off) must not re-run the cleanup;
+        # flip the flag *before* the cleanup so a crash mid-cleanup
+        # cannot leave the user half-logged-out (double log_off)
         if not self.is_online:
             return
+        self.is_online = False
 
         db.user_log(self.name, login=False, ip=self.session.conn.ip)
 
         for ch in self.channels:
-            channel.chlist[ch].log_off(self)
-        self.session.close()
-        self.is_online = False
-        online.remove(self)
+            try:
+                channel.chlist[ch].log_off(self)
+            except ValueError:
+                # already removed (e.g. an interrupted earlier cleanup)
+                pass
+        try:
+            self.session.close()
+        except Exception as e:
+            print('user.log_off: session.close crashed: %r; continuing cleanup' % e,
+                  flush=True)
+        try:
+            online.remove(self)
+        except ValueError:
+            pass
         notify.notify_pin(self, arrived=False)
 
     def write(self, s):

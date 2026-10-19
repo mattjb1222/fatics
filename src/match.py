@@ -597,6 +597,23 @@ class Challenge(Offer, MatchStringParser):
             g.bug_link = g2
             g2.variant.pos.bug_link = g.variant.pos
             g.variant.pos.bug_link = g2.variant.pos
+            # now that the link exists, fix m/n in both boards' gameinfo
+            # strings (they were built with m=1 in __init__), and send
+            # each board's gameinfo + initial board lines to the other
+            # board's players so clients (e.g. Thief) can render both
+            # boards (m=2)
+            g.update_gameinfo()
+            g2.update_gameinfo()
+            if g.white.session.ivars['gameinfo']:
+                g2.white.write_nowrap(g.gameinfo_str)
+                g2.black.write_nowrap(g.gameinfo_str)
+            if g2.white.session.ivars['gameinfo']:
+                g.white.write_nowrap(g2.gameinfo_str)
+                g.black.write_nowrap(g2.gameinfo_str)
+            for p in g.players:
+                g2.send_board(p, as_observer=True)
+            for p in g2.players:
+                g.send_board(p, as_observer=True)
 
     def withdraw_logout(self):
         Offer.withdraw_logout(self)

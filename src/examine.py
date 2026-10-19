@@ -66,7 +66,7 @@ class ExaminedGame(Game):
             self.speed_variant = speed_variant.from_names('untimed',
                 variant_name)
             self.variant = speed_variant.variant_class[self.speed_variant.variant.name](self)
-            self.moves = hist_game['movetext'].split(' ')
+            self.moves = [m for m in hist_game['movetext'].split(' ') if m]
             self.white_name = hist_game['white_name']
             self.black_name = hist_game['black_name']
             self.info_str = '%s %s' % (self.white_name, self.black_name)
@@ -179,6 +179,13 @@ class ExaminedGame(Game):
                 msg = '%s checkmated' % self.black_name
             elif reason == 'Dis':
                 msg = '%s forfeits by disconnection' % self.black_name
+            elif reason == 'Fla':
+                msg = '%s flagged' % self.black_name
+            elif reason == 'TM':
+                msg = '%s ran out of time' % self.black_name
+            elif reason == 'PW':
+                # this board lost; the player's partner (other board) won
+                msg = "%s's partner won" % self.white_name
         elif result_code == '0-1':
             if reason == 'Res':
                 msg = '%s resigns' % self.white_name
@@ -186,6 +193,13 @@ class ExaminedGame(Game):
                 msg = '%s checkmated' % self.white_name
             elif reason == 'Dis':
                 msg = '%s forfeits by disconnection' % self.white_name
+            elif reason == 'Fla':
+                msg = '%s flagged' % self.white_name
+            elif reason == 'TM':
+                msg = '%s ran out of time' % self.white_name
+            elif reason == 'PW':
+                # this board lost; the player's partner (other board) won
+                msg = "%s's partner won" % self.black_name
         elif result_code == '1/2-1/2':
             if reason == 'Agr':
                 msg = 'Game drawn by agreement'
@@ -193,6 +207,14 @@ class ExaminedGame(Game):
                 msg = 'Game drawn by stalemate'
             elif reason == 'Rep':
                 msg = 'Game drawn by repetition'
+            elif reason == 'NM':
+                msg = 'Neither player has mating material'
+            elif reason == '50':
+                msg = 'Game drawn by the 50 move rule'
+            elif reason == 'PDr':
+                msg = "Partners' game drawn"
+            elif reason == 'MBB':
+                msg = 'Game drawn by mate on both boards'
         elif result_code == 'Adj':
             # TODO
             pass
@@ -294,9 +316,14 @@ class ExaminedGame(Game):
         self.players.remove(user)
         assert(user.session.game == self)
         user.session.game = None
-        # user may be offline if he or she disconnected unexpectedly
-        if user.is_online:
+        # user may be offline if he or she disconnected unexpectedly; a
+        # logged-off user still has an open transport (log_off writes the
+        # goodbye message afterwards), so send the message whenever the
+        # connection can still accept data
+        try:
             user.write_('You are no longer examining game %d.\n', self.number)
+        except Exception:
+            pass
         for p in self.players | self.observers:
             p.write_('\n%(name)s has stopped examining game %(num)d.\n', {'name': user.name, 'num': self.number})
         if not self.players:
