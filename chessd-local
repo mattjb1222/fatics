@@ -1,20 +1,13 @@
 #!/bin/sh
 #
 # Wrapper for starting the FatICS server on this host.
-# The stock ./chessd script fails because the bundled venv was created
-# on another machine (stale /home/aaron/... paths, broken python, no
-# system Python 2.7). This uses the Python 2.7.18 built in ~/py27
-# (with the venv's site-packages linked in) instead.
+# Uses the Python 3 venv (venv3, Twisted 26.x).
 #
 # Usage: ./chessd-local (start|stop|run|restart|log)
 
 cd `dirname $0`
 
-PYTHONHOME=/home/mattjb/py27
-PYTHON=$PYTHONHOME/bin/python2.7
-TWISTD="$PYTHON venv/bin/twistd"
-export PYTHONHOME
-export LD_LIBRARY_PATH=/usr/local/lib
+TWISTD="venv3/bin/twistd"
 
 PIDFILE=chessd.pid
 LOGFILE=chessd.log

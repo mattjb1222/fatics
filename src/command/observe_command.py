@@ -39,9 +39,14 @@ def follow_user(conn, u2):
             conn.write(_("You are already following %s's games.\n")
                 % u2.name)
             return
+        old = conn.user.session.following
         conn.user.write(_("You will no longer be following %s's games.\n")
-            % conn.user.session.following.name)
-        conn.user.session.following.session.followed_by.remove(conn.user)
+            % old.name)
+        # discard (not remove): the entry may already be gone if the
+        # followed user logged out (session.close clears followed_by);
+        # a KeyError here used to be unhandled and killed the
+        # connection
+        old.session.followed_by.discard(conn.user)
         conn.user.session.following = None
     conn.write(_("You will now be following %s.\n") % label)
     conn.user.session.following = u2
@@ -115,9 +120,14 @@ class Follow(Command):
             uf = conn.user.session.following
             if not uf:
                 conn.write(_("You are not following any player's games.\n"))
+            elif not uf.is_online:
+                # stale pointer: the followed user logged out; just
+                # clear it (a KeyError/AssertionError here used to
+                # kill the connection)
+                conn.user.session.following = None
+                conn.write(_("You will not follow any player's games.\n"))
             else:
-                assert(uf.is_online)
-                uf.session.followed_by.remove(conn.user)
+                uf.session.followed_by.discard(conn.user)
                 conn.user.session.following = None
                 conn.write(_("You will not follow any player's games.\n"))
         else:

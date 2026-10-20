@@ -103,15 +103,27 @@ class Session(object):
         del self.offers_received[:]
         del self.offers_sent[:]
 
-        for u in self.idlenotified_by:
-            u.write_("\nNotification: %s, whom you were idlenotifying, has departed.\n", (self.user.name,))
-            u.session.idlenotifying.remove(self.user)
-        self.idlenotified_by.clear()
+        try:
+            for u in self.idlenotified_by:
+                u.write_("\nNotification: %s, whom you were idlenotifying, has departed.\n", (self.user.name,))
+                u.session.idlenotifying.remove(self.user)
+            self.idlenotified_by.clear()
+        except Exception as e:
+            print('session.close: idlenotified_by cleanup crashed: %r; continuing' % e)
 
-        if self.followed_by:
-            for p in self.followed_by.copy():
-                p.write_('\n%s, whose games you were following, has logged out.\n', self.user.name)
-            self.followed_by = set()
+        try:
+            if self.followed_by:
+                for p in self.followed_by.copy():
+                    p.write_('\n%s, whose games you were following, has logged out.\n', self.user.name)
+                    # clear the follower's pointer to this session so a
+                    # later 'follow' of someone else does not hit a stale
+                    # session (which used to cause a KeyError that killed
+                    # the follower's connection)
+                    if p.session.following == self.user:
+                        p.session.following = None
+                self.followed_by = set()
+        except Exception as e:
+            print('session.close: followed_by cleanup crashed: %r; continuing' % e)
 
         # unobserve games
         assert(self.user.session == self)

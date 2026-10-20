@@ -585,7 +585,13 @@ class PlayedGame(Game):
 
         gnotified = set()
         for p in self.players:
-            for uf in p.session.followed_by:
+            for uf in list(p.session.followed_by):
+                if not uf.is_online:
+                    # stale follower (e.g. logged out while a previous
+                    # cleanup partially crashed); prune instead of
+                    # crashing on the write assert
+                    p.session.followed_by.discard(uf)
+                    continue
                 uf.write_('\n%(uname)s, whom you are following, has started a game with %(oppname)s.\n',
                     {'uname': p, 'oppname': self.get_opp(p)})
                 self.observe(uf)
@@ -628,22 +634,22 @@ class PlayedGame(Game):
             # XXX how do we convey the speed and variant, when the current
             # format only gives one field?
             vname = self.speed_variant.variant.name
-        # FICS clients (e.g. Thief) parse <g1> positionally: field 1 must be
-        # "Rated" or "Unrated" (Thief's bFound gate) or the variant block is
-        # skipped entirely, and field 2 is compared against "bughouse"/
-        # "crazyhouse" to set the game type, which gates whether the drop-piece
-        # buffer is shown. So put the rated/unrated word in field 1, the variant
-        # name in field 2, the game number in field 3, and the player names in
-        # fields 4/5, while keeping the legacy key=value fields as trailing fields
-        # so nothing else is lost.
+        # FICS clients (e.g. Thief) parse <g1> as
+        # "<g1> N p=P t=TYPE ..." (sscanf "%d p=%d t=%s"); the game number must
+        # come first, and the t= field is compared against "crazyhouse"/
+        # "bughouse"/"blitz"/etc. to set the game type, which gates whether the
+        # drop-piece buffer is shown.  Match FICS's real format exactly:
+        # <g1> 14 p=0 t=crazyhouse r=1 u=0,0 it=180,0 i=180,0 pt=0 rt=1778,1785 ts=1,1 m=2 n=0
         if self.bug_link is not None:
             boards = 2
             # order the two boards deterministically by game number
             board_n = 1 if self.number > self.bug_link.number else 0
+            pt = self.bug_link.number
         else:
             boards = 1
             board_n = 0
-        self.gameinfo_str = '\n<g1> %s %s %d %s %s %s %d %d %d p=%d u=%d,%d it=%d,%d i=%d,%d pt=0 rt=%s,%s ts=%d,%d m=%d n=%d\n' % (("Rated" if self.rated else "Unrated"), vname, self.number, self.white.name, self.black.name, self.black_rating.gameinfo_str(), self.initial_secs, self.inc, self.rated, self.private, self.white.is_guest, self.black.is_guest, self.initial_secs, self.inc, self.initial_secs, self.inc, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal(), boards, board_n)
+            pt = 0
+        self.gameinfo_str = '\n<g1> %d p=%d t=%s r=%d u=%d,%d it=%d,%d i=%d,%d pt=%d rt=%s,%s ts=%d,%d m=%d n=%d\n' % (self.number, self.private, vname, self.rated, not self.white.is_guest, not self.black.is_guest, self.initial_secs, self.inc, self.initial_secs, self.inc, pt, self.white_rating.gameinfo_str(), self.black_rating.gameinfo_str(), self.white.has_timeseal(), self.black.has_timeseal(), boards, board_n)
 
     def update_gameinfo(self):
         """ Rebuild and re-send the gameinfo string (e.g. after a bughouse

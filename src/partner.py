@@ -104,11 +104,11 @@ def end_partnership(p1, p2):
     partners.remove(set([p1, p2]))
     # undo the automatic follow made when the partnership was formed
     if p1.session.following == p2:
-        p2.session.followed_by.remove(p1)
+        p2.session.followed_by.discard(p1)
         p1.session.following = None
         p1.write_('You will no longer be following %s\'s games.\n', p2.name)
     if p2.session.following == p1:
-        p1.session.followed_by.remove(p2)
+        p1.session.followed_by.discard(p2)
         p2.session.following = None
         p2.write_('You will no longer be following %s\'s games.\n', p1.name)
     p1.session.partner = None

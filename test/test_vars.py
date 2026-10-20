@@ -215,13 +215,13 @@ class TestGameinfo(Test):
         self.expect("Challenge:", t2)
         t2.write('a\n')
 
-        self.expect_re(r'<g1> Unrated blitz \d+ Guest\w+ admin 0 120 12 0 p=0 u=1,0 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=1 n=0', t, timeout=30)
+        self.expect_re(r'<g1> \d+ p=0 t=blitz r=0 u=0,1 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=1 n=0', t, timeout=30)
 
         # <g1> 482 p=0 t=blitz r=1 u=0,0 it=180,0 i=180,0 pt=0 rt=2009,2013 ts=1,1 m=2 n=0
         t3 = self.connect_as_guest()
         t3.write('iset gameinfo 1\n')
         t3.write('o 1\n')
-        self.expect_re(r'<g1> Unrated blitz \d+ Guest\w+ admin 0 120 12 0 p=0 u=1,0 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=1 n=0', t3, timeout=30)
+        self.expect_re(r'<g1> \d+ p=0 t=blitz r=0 u=0,1 it=120,12 i=120,12 pt=0 rt=0,0 ts=0,0 m=1 n=0', t3, timeout=30)
         self.close(t3)
 
         t.write('abort\n')
@@ -238,7 +238,7 @@ class TestGameinfo(Test):
         self.expect("Challenge:", t2)
         t2.write('a\n')
 
-        self.expect_re(r'<g1> Unrated crazyhouse \d+ GuestABCD GuestEFGH 0 1200 5 0 p=0 u=1,1 it=1200,5 i=1200,5 pt=0 rt=0,0 ts=0,0 m=1 n=0', t, timeout=30)
+        self.expect_re(r'<g1> \d+ p=0 t=crazyhouse r=0 u=0,0 it=1200,5 i=1200,5 pt=0 rt=0,0 ts=0,0 m=1 n=0', t, timeout=30)
 
         t.write('abort\n')
 

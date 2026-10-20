@@ -77,7 +77,10 @@ class ExaminedGame(Game):
             self.move_times = self._parse_move_times(
                 hist_game.get('move_times'))
 
-        for uf in user.session.followed_by:
+        for uf in list(user.session.followed_by):
+            if not uf.is_online:
+                user.session.followed_by.discard(uf)
+                continue
             uf.write_('\n%s, whom you are following, has started examining a game.\n', user)
             self.observe(uf)
 
