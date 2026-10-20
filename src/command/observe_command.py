@@ -85,6 +85,10 @@ class Pobserve(Command):
                 conn.write(_('You are not playing a game.\n'))
                 return
             if not g.bug_link:
+                if g.speed_variant.variant.name != 'bughouse':
+                    # pobserve only applies to bughouse; stay silent
+                    # for other variants (the message was noise there)
+                    return
                 conn.write(_('Your game is not linked to a partner game.\n'))
                 return
         else:
@@ -97,6 +101,8 @@ class Pobserve(Command):
                 conn.write(_('%s is not playing a game.\n') % args[0])
                 return
             if not g.bug_link:
+                if g.speed_variant.variant.name != 'bughouse':
+                    return
                 conn.write(_('That game is not linked to a partner game.\n'))
                 return
         pgame = g.bug_link
