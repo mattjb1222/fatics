@@ -124,6 +124,12 @@ class CommandParser(object):
             except BadCommandError:
                 ret = block.BLK_ERROR_BADCOMMAND
                 cmd.usage(conn)
+            except Exception:
+                # an internal error in a command must not kill the client's
+                # connection -- log it, notify the user, keep the session
+                import traceback
+                traceback.print_exc()
+                conn.write("An internal error occurred; the command was not executed.\n")
 
         return ret
 

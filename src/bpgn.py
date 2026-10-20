@@ -257,6 +257,16 @@ def _make_movetext(moves, times):
     return ''.join(mt)
 
 
+def _elo(v):
+    """ A stored rating is char(4): '1234' for rated, '++++' (unrated),
+    '0' or None otherwise.  PGN Elo tags are numeric, so only a real
+    number is usable; anything else maps to 0 (tag omitted). """
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return 0
+
+
 def make_pgn(h):
     """ Serialize a stored/history game into PGN text.
 
@@ -278,8 +288,8 @@ def make_pgn(h):
     move_times = _split_move_times(h.get('move_times'))
 
     color = h.get('color_char')
-    ur = h.get('user_rating') or 0
-    orr = h.get('opp_rating') or 0
+    ur = _elo(h.get('user_rating'))
+    orr = _elo(h.get('opp_rating'))
     if 'white_name' in h:
         white_name = h['white_name']
         black_name = h['black_name']
@@ -292,8 +302,8 @@ def make_pgn(h):
         white_elos, black_elos = orr, ur
 
     result = h.get('result') or '*'
-    time_min = h.get('time') or 0
-    inc = h.get('inc') or 0
+    time_min = _elo(h.get('time'))
+    inc = _elo(h.get('inc'))
     we = h.get('when_ended')
     date = we.strftime('%Y.%m.%d') if hasattr(we, 'strftime') else '????.??.??'
 
@@ -343,20 +353,18 @@ def make_bughouse_pgn(h, partner):
     white_b, black_b = partner['white_name'], partner['black_name']
 
     color = h.get('color_char')
-    ur = h.get('user_rating') or 0
-    orr = h.get('opp_rating') or 0
+    ur = _elo(h.get('user_rating'))
+    orr = _elo(h.get('opp_rating'))
     if color == 'W':
         white_a_elo, black_a_elo = ur, orr
     else:
         white_a_elo, black_a_elo = orr, ur
-    wb = partner.get('white_rating')
-    bb = partner.get('black_rating')
-    white_b_elo = int(wb) if (wb is not None and str(wb).isdigit()) else 0
-    black_b_elo = int(bb) if (bb is not None and str(bb).isdigit()) else 0
+    white_b_elo = _elo(partner.get('white_rating'))
+    black_b_elo = _elo(partner.get('black_rating'))
 
     result = h.get('result') or '*'
-    time_min = h.get('time') or 0
-    inc = h.get('inc') or 0
+    time_min = _elo(h.get('time'))
+    inc = _elo(h.get('inc'))
     we = h.get('when_ended')
     date = we.strftime('%Y.%m.%d') if hasattr(we, 'strftime') else '????.??.??'
 

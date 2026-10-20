@@ -288,6 +288,11 @@ class BaseUser(object):
             h = matches[0] if matches else None
 
         if h:
+            # in-memory entries (games that just ended) don't carry
+            # partner_game_id (only DB rows do) -- fetch it so
+            # showpgn can emit the two-board bughouse PGN
+            if 'partner_game_id' not in h:
+                h['partner_game_id'] = db.game_get_partner(h['game_id'])
             assert(h['color_char'] in ['W', 'B'])
             if h['color_char'] == 'W':
                 h['white_name'] = self.name
