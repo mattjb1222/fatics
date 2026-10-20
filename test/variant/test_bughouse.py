@@ -427,12 +427,24 @@ class TestBughouseKibitz(Test):
         self.expect('Creating:', t2)
         self.expect('Creating:', t3)
         self.expect('Creating:', t4)
+        # each player is told which game their partner is playing in
+        # (clients use it to link the two bughouse boards)
+        self.expect('Your partner is playing game ', t)
+        self.expect('Your partner is playing game ', t2)
+        self.expect('Your partner is playing game ', t3)
+        self.expect('Your partner is playing game ', t4)
 
         t2.write('res\n')
         self.expect('GuestEFGH resigns} 1-0', t2)
         self.expect('GuestEFGH resigns} 1-0', t4)
+        # the partner board's players also see the other board's result,
+        # so their clients can end both boards
+        self.expect('GuestEFGH resigns} 1-0', t)
+        self.expect('GuestEFGH resigns} 1-0', t3)
         self.expect("GuestIJKL's partner won} 0-1", t)
         self.expect("GuestIJKL's partner won} 0-1", t3)
+        self.expect("GuestIJKL's partner won} 0-1", t2)
+        self.expect("GuestIJKL's partner won} 0-1", t4)
 
         self.close(t)
         self.close(t2)

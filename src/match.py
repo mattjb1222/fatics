@@ -614,6 +614,13 @@ class Challenge(Offer, MatchStringParser):
                 g2.send_board(p, as_observer=True)
             for p in g2.players:
                 g.send_board(p, as_observer=True)
+            # tell each player which game their partner is playing in,
+            # so clients (e.g. Thief, which tracks it for end-of-game
+            # handling of the partner board) can link the two boards
+            for p in g.players:
+                p.write_('Your partner is playing game %d.\n', (g2.number,))
+            for p in g2.players:
+                p.write_('Your partner is playing game %d.\n', (g.number,))
 
     def withdraw_logout(self):
         Offer.withdraw_logout(self)

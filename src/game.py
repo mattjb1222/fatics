@@ -980,13 +980,19 @@ class PlayedGame(Game):
         self.when_ended = datetime.datetime.utcnow()
         line = '\n{Game %d (%s vs. %s) %s} %s\n' % (self.number,
             self.white_name, self.black_name, msg, result_code)
-        self.white.write_nowrap(line)
-        self.black.write_nowrap(line)
+        # in bughouse, each board's players also view the partner board
+        # (e.g. clients render it as a linked window), so they need the
+        # partner board's result line too -- otherwise their window for
+        # it never ends.  players of the two boards are disjoint, and
+        # propagation runs synchronously, so no line is ever double-sent.
+        recipients = {self.white, self.black}
+        recipients |= self.observers
+        recipients |= online.gin_var
+        if self.bug_link is not None:
+            recipients |= set(self.bug_link.players)
         wire_log(self.white, 'result', line)
         wire_log(self.black, 'result', line)
-        for u in self.observers:
-            u.write_nowrap(line)
-        for u in online.gin_var:
+        for u in recipients:
             u.write_nowrap(line)
 
         self.clock.stop()
