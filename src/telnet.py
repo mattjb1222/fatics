@@ -215,13 +215,17 @@ class TelnetTransport(protocol.Protocol):
         self.protocol.dataReceived(bytes)
 
     def _escape(self, data):
+        # Use the FICS-native line ending (\n\r: LF then CR) on all ports.
+        # Some clients (notably Thief, which proxies the connection through
+        # its timeseal.exe helper) split lines on CR only: their read path
+        # strips \r\n (CR then LF) pairs down to bare LF, which leaves no CR
+        # to split on, so all output gets buffered until the next input.
+        # With the FICS order the CR survives and lines display immediately.
         if self.compatibility:
             data = utf8.utf8_to_ascii(data)
-            data = data.replace(b'\n', b'\n\r')
-        else:
-            # escape telnet IAC
-            data = data.replace(b'\xff', b'\xff\xff')
-            data = data.replace(b'\n', b'\r\n')
+        # escape telnet IAC
+        data = data.replace(b'\xff', b'\xff\xff')
+        data = data.replace(b'\n', b'\n\r')
         return data
 
     def enableWrapping(self, width):

@@ -72,7 +72,10 @@ class Telnet(object):
             else:
                 out.append(data[i:i + 1])
                 i += 1
-        return b''.join(out)
+        data = b''.join(out)
+        # the server sends lines in FICS-native order (\n\r); normalize
+        # to \r\n so test patterns don't have to care
+        return data.replace(b'\n\r', b'\r\n')
 
     def _decode(self, data):
         return self._pull(data).decode('utf-8', 'replace')
