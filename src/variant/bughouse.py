@@ -556,48 +556,23 @@ class Position(object):
             assert(mv.drop.isupper() if self.wtm else mv.drop.islower())
             self.board[mv.to] = mv.drop
             self.hash ^= zobrist.piece_hash(mv.to, mv.drop)
-            # the dropped piece may be held by either position
-            # (captures on one board are stored in the linked
-            # one); remove it from whichever holds it (prefer this
-            # one) and remember where it came from for undo
-            if self.holding[mv.drop] > 0:
-                self.remove_from_holding(mv.drop, True)
-                mv.undo.drop_from_link = False
-            elif self.bug_link is not None and self.bug_link is not self:
-                self.bug_link.remove_from_holding(mv.drop, True)
-                mv.undo.drop_from_link = True
-                # the piece was not counted in this position's
-                # material (it lived in the linked holding); now it
-                # is on this board, so the team total is preserved
-                self.material[int(self.wtm)] += \
-                    piece_material[mv.drop.lower()]
-                self.bug_link.material[int(self.wtm)] -= \
-                    piece_material[mv.drop.lower()]
-            elif self.bug_link is not None:
-                # exam mode (bug_link is self): holding is counted
-                # once, so it must be held by this position
-                self.remove_from_holding(mv.drop, True)
-                mv.undo.drop_from_link = False
-            # dropping a piece held by this position does not change
-            # material; drops do not reset the 50-move count because
-            # they are reversible
+            self.remove_from_holding(mv.drop, True)
+            # dropping a piece does not change material; it
+            # does not reset 50-move count because it's reversible
         else:
             self.board[mv.fr] = '-'
 
             if mv.is_capture:
                 if self.promoted[mv.to]:
-                    # promoted piece reverts to a pawn when captured;
-                    # the case follows the CAPTURING side (uppercase =
-                    # white's holding), not the captured piece
-                    holding_pc = 'P' if self.wtm else 'p'
+                    # promoted piece reverts to a pawn when captured
+                    holding_pc = 'p' if self.wtm else 'P'
                     mv.undo.capture_was_promoted = True
                     # clear the old promoted marker; if the capturing piece
                     # is promoted, we'll re-set it below
                     self.hash ^= zobrist.promoted_hash[mv.to]
                     self.promoted[mv.to] = 0
                 else:
-                    holding_pc = (mv.capture.upper() if self.wtm
-                        else mv.capture.lower())
+                    holding_pc = mv.capture
                     mv.undo.capture_was_promoted = False
                 mv.undo.holding_pc = holding_pc
                 self.bug_link.add_to_holding(holding_pc, True)
@@ -640,13 +615,13 @@ class Position(object):
                 assert(self.board[mv.to - 0x10] == 'p')
                 self.hash ^= zobrist.piece_hash(mv.to - 0x10, 'p')
                 self.board[mv.to - 0x10] = '-'
-                self.bug_link.add_to_holding('P', True)
+                self.bug_link.add_to_holding('p', True)
                 self.bug_link.check_material()
             else:
                 assert(self.board[mv.to + 0x10] == 'P')
                 self.hash ^= zobrist.piece_hash(mv.to + 0x10, 'P')
                 self.board[mv.to + 0x10] = '-'
-                self.bug_link.add_to_holding('p', True)
+                self.bug_link.add_to_holding('P', True)
                 self.bug_link.check_material()
         elif mv.is_oo:
             # move the rook
@@ -764,28 +739,19 @@ class Position(object):
 
         if mv.drop:
             self.board[mv.to] = '-'
-            # restore the piece to the same position it was held by
-            if (getattr(mv.undo, 'drop_from_link', False)
-                    and self.bug_link is not None
-                    and self.bug_link is not self):
-                # update_hash=True: restores the linked position's
-                # holding hash *and* material (the piece was taken
-                # out of its material when it was dropped)
-                self.bug_link.add_to_holding(mv.drop, True)
-            else:
-                self.add_to_holding(mv.drop, False)
+            self.add_to_holding(mv.drop, False)
         elif mv.is_ep:
             if self.wtm:
                 assert(self.board[mv.to - 0x10] == '-')
                 self.board[mv.to - 0x10] = 'p'
-                self.bug_link.remove_from_holding('P', True)
-                self.bug_link.material[1] -= piece_material['p']
+                self.bug_link.remove_from_holding('p', True)
+                self.bug_link.material[0] -= piece_material['p']
                 self.bug_link.check_material()
             else:
                 assert(self.board[mv.to + 0x10] == '-')
                 self.board[mv.to + 0x10] = 'P'
-                self.bug_link.remove_from_holding('p', True)
-                self.bug_link.material[0] -= piece_material['p']
+                self.bug_link.remove_from_holding('P', True)
+                self.bug_link.material[1] -= piece_material['p']
                 self.bug_link.check_material()
         elif mv.is_oo:
             if self.wtm:
@@ -807,12 +773,7 @@ class Position(object):
                 self.board[D8] = '-'
         elif mv.is_capture:
             self.bug_link.remove_from_holding(mv.undo.holding_pc, True)
-            # after the wtm flip, self.wtm *is* the side that made
-            # the move (the capturer); add_to_holding credited the
-            # piece to the capturer's material, so take it back from
-            # there
-            self.bug_link.material[int(self.wtm)] -= \
-                piece_material[mv.undo.holding_pc.lower()]
+            self.bug_link.material[not self.wtm] -= piece_material[mv.undo.holding_pc.lower()]
             self.bug_link.check_material()
 
         # restore the "promoted" markers
@@ -885,7 +846,7 @@ class Position(object):
             # and only then check if we currently have a piece capable
             # of blocking it
 
-            for (pc, count) in list(self.team_holding().items()):
+            for (pc, count) in list(self.holding.items()):
                 if pc.isupper() == self.wtm and count > 0:
                     # we have at least one piece in holding
                     # try dropping at all empty sqares adjacent to king;
@@ -898,9 +859,9 @@ class Position(object):
                             if Move(self, None, ksq + d, drop=pc).is_legal():
                                 return
         else:
-            # if the player has any pieces in holding (on either
-            # board), then there is a legal move
-            for (pc, count) in self.team_holding().items():
+            # if the player has any pieces in holding, then there
+            # is a legal move
+            for (pc, count) in self.holding.items():
                 if pc.isupper() == self.wtm and count > 0:
                     return
 
@@ -1224,17 +1185,10 @@ class Position(object):
             else:
                 pc = m.group(1).lower()
             to = str_to_sq(m.group(2).lower())
-            # a drop is legal if the piece is held by either
-            # position (exam mode: bug_link is self, count once)
-            if self.bug_link is not None and self.bug_link is not self:
-                holding_count = (self.holding[pc] +
-                                self.bug_link.holding[pc])
-            else:
-                holding_count = self.holding[pc]
             if self.check_integrity:
-                assert(0 <= holding_count <= 32)
-            if holding_count == 0:
-                raise IllegalMoveError('no such piece in holding')
+                assert(0 <= self.holding[pc] <= 16)
+                if self.holding[pc] == 0:
+                    raise IllegalMoveError('no such piece in holding')
             if self.board[to] != '-':
                 raise IllegalMoveError('square is occupied')
             if pc in ['p', 'P'] and rank(to) in [0, 7]:
@@ -1392,25 +1346,12 @@ class Position(object):
         full_moves = self.ply // 2 + 1
         return "%s %s %s %s %d %d" % (pos_str, stm_str, castling, ep_str, self.fifty_count, full_moves)
 
-    def team_holding(self):
-        """{pc: count} of the holding available for drops, summing
-        both linked positions (captures on one board are stored in
-        the other; in exam mode bug_link is self, so count once)."""
-        items = {}
-        for (pc, count) in self.holding.items():
-            items[pc] = count
-        if self.bug_link is not None and self.bug_link is not self:
-            for (pc, count) in self.bug_link.holding.items():
-                items[pc] = items.get(pc, 0) + count
-        return items
-
     def get_holding_str(self):
-        items = self.team_holding()
         holding_white = ''
         holding_black = ''
         for pc in 'PNBRQ':
-            holding_white += pc * items.get(pc, 0)
-            holding_black += pc.lower() * items.get(pc.lower(), 0)
+            holding_white += pc * self.holding[pc]
+            holding_black += pc * self.holding[pc.lower()]
         return (holding_white, holding_black)
 
     def check_castle_flags(self, wtm, is_oo):
