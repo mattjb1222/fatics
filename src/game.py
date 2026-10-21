@@ -813,9 +813,10 @@ class PlayedGame(Game):
 
     def send_holding(self):
         """Send the holding (pieces available to drop) of this board to
-        this board's players.  In bughouse, a player can only drop pieces
-        that their partner captured, so the player needs to be told the
-        current holding of the board they are playing on."""
+        this board's players.  In bughouse a player can drop pieces
+        their team captured, on either board; captures made on this
+        board are stored in the linked position's holding, so the
+        holding line sums both linked positions."""
         if self.variant.name != 'bughouse':
             return
         if not self.is_active:
