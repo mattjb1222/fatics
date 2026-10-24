@@ -377,7 +377,7 @@ class VarList(object):
         BoolVar("allresults", False).add_as_ivar(32)
         BoolVar("obsping", False).add_as_ivar(33) # ignored
         BoolVar("singleboard", False).add_as_ivar(34)
-        BoolVar("bugholding", True).add_as_ivar(35)
+        BoolVar("bugholding", False).add_as_ivar(35)
 
         # These do not seem to have numbers.
         BoolVar("atomic", True).add_as_ivar()
