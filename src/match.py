@@ -598,25 +598,19 @@ class Challenge(Offer, MatchStringParser):
             g2.variant.pos.bug_link = g.variant.pos
             g.variant.pos.bug_link = g2.variant.pos
             # now that the link exists, fix m/n in both boards' gameinfo
-            # strings (they were built with m=1 in __init__), and send
-            # each board's gameinfo + initial board lines to the other
-            # board's players so clients (e.g. Thief) can render both
-            # boards (m=2)
+            # strings (they were built with m=1 in __init__).
+            # NOTE: the partner board's gameinfo/board lines are *not*
+            # sent to this board's players -- that force-feed makes
+            # single-board clients (e.g. Winboard) flip to whichever
+            # board moved.  Clients that want the partner board (e.g.
+            # Thief) observe it themselves.
             g.update_gameinfo()
             g2.update_gameinfo()
-            if g.white.session.ivars['gameinfo']:
-                g2.white.write_nowrap(g.gameinfo_str)
-                g2.black.write_nowrap(g.gameinfo_str)
-            if g2.white.session.ivars['gameinfo']:
-                g.white.write_nowrap(g2.gameinfo_str)
-                g.black.write_nowrap(g2.gameinfo_str)
-            for p in g.players:
-                g2.send_board(p, as_observer=True)
-            for p in g2.players:
-                g.send_board(p, as_observer=True)
-            # tell each player which game their partner is playing in,
-            # so clients (e.g. Thief, which tracks it for end-of-game
-            # handling of the partner board) can link the two boards
+            # tell each player which game their partner is playing in;
+            # clients such as Thief use it to auto-observe the partner
+            # board ('Your partner is playing game %d' triggers Thief's
+            # automatic 'observe <num>') and for end-of-game handling
+            # of the partner window
             for p in g.players:
                 p.write_('Your partner is playing game %d.\n', (g2.number,))
             for p in g2.players:

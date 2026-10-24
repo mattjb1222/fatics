@@ -91,6 +91,7 @@ class Game(object):
         self.observers = set()
         self.pending_offers = []
         self.bug_link = None
+        self._last_holding_line = None
 
         # (silently) remove each player's seeks
         for p in self.players:
@@ -210,7 +211,7 @@ class Game(object):
         for u in self.observers:
             self.send_board(u)
 
-    def send_board(self, u, isolated=False, as_observer=False):
+    def send_board(self, u, isolated=False):
         if u.vars['style'] == 12:
             if (self.gtype == PLAYED and self.variant.name == 'chess' and
                     u.session.ivars['compressmove'] and
@@ -218,17 +219,7 @@ class Game(object):
                     not isolated):
                 out = self.variant.to_deltaboard(u)
             else:
-                # render the board as if the user were an observer (e.g.
-                # when a bughouse player views the partner board)
-                added = False
-                if as_observer and u not in self.observers:
-                    self.observers.add(u)
-                    added = True
-                try:
-                    out = self.variant.to_style12(u)
-                finally:
-                    if added:
-                        self.observers.remove(u)
+                out = self.variant.to_style12(u)
         else:
             # style 1, the default
             out = self.variant.to_style1(u)
@@ -813,18 +804,28 @@ class PlayedGame(Game):
 
     def send_holding(self):
         """Send the holding (pieces available to drop) of this board to
-        this board's players.  In bughouse, a player can only drop pieces
-        that their partner captured, so the player needs to be told the
-        current holding of the board they are playing on."""
+        this board's players who have opted in ("set bugholding 1"),
+        as `holding [white] [black]`.  In bughouse, a player can only
+        drop pieces that their partner captured, so the player needs to
+        be told the current holding of the board they are playing on.
+        FICS never sends this line; it is an opt-in extension for
+        clients such as icsdrone/Sunsetter that need it."""
         if self.variant.name != 'bughouse':
             return
         if not self.is_active:
             return
         (holding_white, holding_black) = self.variant.pos.get_holding_str()
         line = 'holding [%s] [%s]\n' % (holding_white, holding_black)
+        # send the holding line only when it changes; resending the same
+        # line on every move spams clients (FICS never does; its Winboard
+        # and Thief clients work fine without the repeats)
+        if self._last_holding_line == line:
+            return
+        self._last_holding_line = line
         for p in self.players:
-            wire_log(p, 'holding', line)
-            p.write_nowrap(line)
+            if p.vars.get('bugholding'):
+                wire_log(p, 'holding', line)
+                p.write_nowrap(line)
 
     def next_move(self, mv, conn):
         # decline all offers to the player who just moved
@@ -872,24 +873,16 @@ class PlayedGame(Game):
             p.session.ping(for_move=True)
         super(PlayedGame, self).next_move(mv, conn)
 
-        if self.bug_link is not None and self.bug_link.is_active:
-            # a capture (or a drop back to the opponent's holding) may
-            # have changed the linked board's holding, so send its
-            # players an updated board right away instead of waiting
-            # for their next move
-            self.bug_link.send_boards()
-            # send the partner board's lines to *this* board's players
-            # and observers too (FICS shows both boards to everyone);
-            # render with observer orientation (no flip)
-            for p in self.players:
-                self.bug_link.send_board(p, as_observer=True)
-            for u in self.observers:
-                self.bug_link.send_board(u, as_observer=True)
-            # a capture on this board changes the linked board's holding,
-            # and a drop on either board changes that board's own holding.
-            # Send both boards' holdings to keep the players (and their
-            # engines) up to date.
-            self.bug_link.send_holding()
+        if self.bug_link is not None:
+            # only *this* board's state can have changed (a capture
+            # changes this board's holding; the partner board's state
+            # is unaffected), so only this board's holding is
+            # resent.  The partner board's lines are never force-fed
+            # to this board's players (single-board clients such as
+            # Winboard would flip to whichever board moved): players
+            # who want the partner board (e.g. Thief) observe it
+            # themselves, and observers of one board automatically
+            # observe both via observe().
             self.send_holding()
 
         if self.variant.name == "bughouse":
@@ -952,11 +945,14 @@ class PlayedGame(Game):
         super(PlayedGame, self).observe(u)
         if u.session.ivars['gameinfo']:
             u.write_nowrap(self.gameinfo_str)
-        if (self.bug_link is not None and self.bug_link.is_active and
-                u not in self.bug_link.observers):
+        if (self.bug_link is not None and self.bug_link.is_active
+                and u not in self.bug_link.observers
+                and u not in self.bug_link.players):
             # guard against the ping-pong recursion (the link is
             # bidirectional, so the partner's observe() would call
-            # observe() on this game again)
+            # observe() on this game again); also don't add a player
+            # to their *own* board's observer set (they already get
+            # its lines as a player)
             self.bug_link.observe(u)
             if u.session.ivars['gameinfo']:
                 u.write_nowrap(self.bug_link.gameinfo_str)

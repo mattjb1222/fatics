@@ -378,9 +378,9 @@ class TestBughouseKibitz(Test):
 
         t3.write('whi this is a test\n')
         self.expect('GuestIJKL(U)(++++)[1] whispers: this is a test', t5)
-        # bughouse partners auto-follow each other, so the other three
-        # players are observers of this board and receive the whisper too
-        self.expect('(whispered to 4 players)', t3)
+        # no auto-follow/auto-observe: only the genuine observer (t5,
+        # who observes both linked boards) receives the whisper
+        self.expect('(whispered to 1 player)', t3)
 
         self.close(t5)
 
