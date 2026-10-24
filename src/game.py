@@ -91,6 +91,7 @@ class Game(object):
         self.observers = set()
         self.pending_offers = []
         self.bug_link = None
+        self._last_holding_line = None
 
         # (silently) remove each player's seeks
         for p in self.players:
@@ -801,6 +802,33 @@ class PlayedGame(Game):
         assert(char in ['W', 'B'])
         return WHITE if char == 'W' else BLACK
 
+    def send_holding_if_changed(self):
+        """Send this board's holding (pieces available to drop) to this
+        board's players, but only when it changes since the last send.
+        This is the push side of bughouse holding updates: passive
+        clients (Winboard) rely on it, and sending the line on every
+        move (FICS behavior) is spam, while sending nothing breaks
+        them.  A move changes this board's holding (a drop) and/or
+        the partner board's holding (a capture), so next_move calls
+        this for both boards.  Engines that prefer to poll can use
+        the 'holding' command instead.  Returns True if the holding
+        changed and the line was sent (next_move also refreshes
+        that board's board line then, for clients that read the
+        holding from the board line rather than this one)."""
+        if self.variant.name != 'bughouse':
+            return False
+        if not self.is_active:
+            return False
+        (holding_white, holding_black) = self.variant.pos.get_holding_str()
+        line = 'holding [%s] [%s]\n' % (holding_white, holding_black)
+        if self._last_holding_line == line:
+            return False
+        self._last_holding_line = line
+        for p in self.players:
+            wire_log(p, 'holding', line)
+            p.write_nowrap(line)
+        return True
+
     def next_move(self, mv, conn):
         # decline all offers to the player who just moved
         u = self.get_user_to_move()
@@ -848,6 +876,25 @@ class PlayedGame(Game):
         super(PlayedGame, self).next_move(mv, conn)
 
         if self.variant.name == "bughouse":
+            # a move on this board can change this board's holding
+            # (a drop) and the partner board's holding (a capture), so
+            # push each board's holding line to its players if it
+            # changed (passive clients like Winboard rely on the push;
+            # the 'holding' command polls for clients that prefer it).
+            # A drop changes this board's holding; its own board line
+            # was just sent by super().next_move() with the updated
+            # inline holding, so no extra refresh is needed there.
+            self.send_holding_if_changed()
+            if self.bug_link is not None:
+                # a capture on this board changed the partner board's
+                # holding; refresh that board's own board line too
+                # (with its updated inline holding) in addition to
+                # the standalone holding line.  This is the partner
+                # board's own line (its own game number), so it
+                # doesn't make single-board clients like Winboard
+                # flip over to a different board.
+                if self.bug_link.send_holding_if_changed():
+                    self.bug_link.send_boards()
             # bughouse is a special case because a checkmate or stalemate
             # on one board doesn't necessariy end the games
             if self.variant.pos.is_checkmate:
