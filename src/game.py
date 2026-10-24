@@ -35,7 +35,7 @@ from online import online
 from game_constants import *
 
 # Optional wire-format diagnostic. Set FATICS_WIRE_DEBUG=/path/to/log to log the
-# exact bytes send_board/send_holding write (after telnet \n -> \r\n escaping),
+# exact bytes send_board writes (after telnet \n -> \r\n escaping),
 # tagged with timestamp + client name, so they can be compared against a
 # reference client/server. Inert unless the env var is set.
 _wire_log_fh = None
@@ -801,21 +801,6 @@ class PlayedGame(Game):
         assert(char in ['W', 'B'])
         return WHITE if char == 'W' else BLACK
 
-    def send_holding(self):
-        """Send the holding (pieces available to drop) of this board to
-        this board's players.  In bughouse, a player can only drop
-        pieces that their partner captured, so the player needs to be
-        told the current holding of the board they are playing on."""
-        if self.variant.name != 'bughouse':
-            return
-        if not self.is_active:
-            return
-        (holding_white, holding_black) = self.variant.pos.get_holding_str()
-        line = 'holding [%s] [%s]\n' % (holding_white, holding_black)
-        for p in self.players:
-            wire_log(p, 'holding', line)
-            p.write_nowrap(line)
-
     def next_move(self, mv, conn):
         # decline all offers to the player who just moved
         u = self.get_user_to_move()
@@ -861,18 +846,6 @@ class PlayedGame(Game):
         if p.has_timeseal():
             p.session.ping(for_move=True)
         super(PlayedGame, self).next_move(mv, conn)
-
-        if self.bug_link is not None:
-            # only *this* board's state can have changed (a capture
-            # changes this board's holding; the partner board's state
-            # is unaffected), so only this board's holding is
-            # resent.  The partner board's lines are never force-fed
-            # to this board's players (single-board clients such as
-            # Winboard would flip to whichever board moved): players
-            # who want the partner board (e.g. Thief) observe it
-            # themselves, and observers of one board automatically
-            # observe both via observe().
-            self.send_holding()
 
         if self.variant.name == "bughouse":
             # bughouse is a special case because a checkmate or stalemate
