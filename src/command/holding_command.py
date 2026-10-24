@@ -55,6 +55,10 @@ class Holding(Command):
             + _('  of a bughouse game.\n')
             + _('  With no argument, uses the game you are playing\n')
             + _('  (or observing); with a name or number, uses that\n')
-            + _('  game (e.g. your partner\'s board).\n'))
+            + _('  game (e.g. your partner\'s board).\n')
+            + _('  The server also pushes this line when a game\'s\n')
+            + _('  holding changes; use "set bugholding 0" to stop\n')
+            + _('  receiving the pushed lines (this command still\n')
+            + _('  works).\n'))
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

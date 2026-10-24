@@ -76,7 +76,7 @@ class Ivariables(Command):
         conn.write('pinginfo=%(pinginfo)d         boardinfo=%(boardinfo)d        extuserinfo=%(extuserinfo)d      audiochat=%(audiochat)d\n' % u.session.ivars)
         conn.write('seekca=%(seekca)d           showownseek=%(showownseek)d      premove=%(premove)d          smartmove=%(smartmove)d\n' % u.session.ivars)
         conn.write('movecase=%(movecase)d         nowrap=%(nowrap)d           allresults=%(allresults)d\n' % u.session.ivars)
-        conn.write('singleboard=%(singleboard)d\n' % u.session.ivars)
+        conn.write('singleboard=%(singleboard)d         bugholding=%(bugholding)d\n' % u.session.ivars)
         conn.write('suicide=%(suicide)d          crazyhouse=%(crazyhouse)d       losers=%(losers)d           wildcastle=%(wildcastle)d\n' % u.session.ivars)
         conn.write('fr=%(fr)d               atomic=%(atomic)d\n' % u.session.ivars)
         conn.write('xml=?\n\n' % u.session.ivars)

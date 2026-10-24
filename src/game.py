@@ -814,7 +814,9 @@ class PlayedGame(Game):
         the 'holding' command instead.  Returns True if the holding
         changed and the line was sent (next_move also refreshes
         that board's board line then, for clients that read the
-        holding from the board line rather than this one)."""
+        holding command rather than this one).  Players can hide
+        these lines with 'set bugholding 0' (they remain available
+        via the 'holding' command)."""
         if self.variant.name != 'bughouse':
             return False
         if not self.is_active:
@@ -825,6 +827,8 @@ class PlayedGame(Game):
             return False
         self._last_holding_line = line
         for p in self.players:
+            if not p.session.ivars['bugholding']:
+                continue
             wire_log(p, 'holding', line)
             p.write_nowrap(line)
         return True
