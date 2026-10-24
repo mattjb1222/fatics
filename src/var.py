@@ -288,14 +288,6 @@ class VarList(object):
 
         BoolVar("open", True, N_("You are now open to receive match requests.\n"), N_("You are no longer open to receive match requests.\n")).persist().add_as_var()
         BoolVar("bugopen", False, N_("You are now open for bughouse.\n"), N_("You are not open for bughouse.\n")).persist().add_as_var()
-        # non-persistent (resets to off on each login; clients such as
-        # icsdrone send "set bugholding 1" right after logging in).
-        # When on, this user receives the bughouse "holding [white]
-        # [black]" line (sent only when it changes) for the board they
-        # are playing on; when off, no holding lines are ever sent,
-        # matching FICS, whose Winboard and Thief clients work fine
-        # without them.
-        BoolVar("bugholding", False).add_as_var()
         BoolVar("silence", False, N_("You will now play games in silence.\n"), N_("You will not play games in silence.\n")).persist().add_as_var()
         BoolVar("bell", True, N_("You will now hear beeps.\n"), N_("You will not hear beeps.\n")).persist().add_as_var()
         BoolVar("autoflag", True, N_("Auto-flagging enabled.\n"), N_("Auto-flagging disabled.\n")).persist().add_as_var()

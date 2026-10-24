@@ -91,7 +91,6 @@ class Game(object):
         self.observers = set()
         self.pending_offers = []
         self.bug_link = None
-        self._last_holding_line = None
 
         # (silently) remove each player's seeks
         for p in self.players:
@@ -804,28 +803,18 @@ class PlayedGame(Game):
 
     def send_holding(self):
         """Send the holding (pieces available to drop) of this board to
-        this board's players who have opted in ("set bugholding 1"),
-        as `holding [white] [black]`.  In bughouse, a player can only
-        drop pieces that their partner captured, so the player needs to
-        be told the current holding of the board they are playing on.
-        FICS never sends this line; it is an opt-in extension for
-        clients such as icsdrone/Sunsetter that need it."""
+        this board's players.  In bughouse, a player can only drop
+        pieces that their partner captured, so the player needs to be
+        told the current holding of the board they are playing on."""
         if self.variant.name != 'bughouse':
             return
         if not self.is_active:
             return
         (holding_white, holding_black) = self.variant.pos.get_holding_str()
         line = 'holding [%s] [%s]\n' % (holding_white, holding_black)
-        # send the holding line only when it changes; resending the same
-        # line on every move spams clients (FICS never does; its Winboard
-        # and Thief clients work fine without the repeats)
-        if self._last_holding_line == line:
-            return
-        self._last_holding_line = line
         for p in self.players:
-            if p.vars.get('bugholding'):
-                wire_log(p, 'holding', line)
-                p.write_nowrap(line)
+            wire_log(p, 'holding', line)
+            p.write_nowrap(line)
 
     def next_move(self, mv, conn):
         # decline all offers to the player who just moved
