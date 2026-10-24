@@ -37,6 +37,16 @@ class Session(object):
         self.last_opp = None
         self.use_timeseal = False
         self.ping_sent = []
+        # set True when a sent ping goes un-ponged (i.e. the client
+        # speaks the timeseal/zipseal handshake but does not filter the
+        # server's ping lines, so any further pings would show up as
+        # visible garbage on that client); reset on any pong.
+        self.ping_dead = False
+        # True after the session's first ping; further pings require a
+        # pong (see ping()).
+        self.ping_probed = False
+        # True once the client has proven it pongs.
+        self.ever_ponged = False
         self.ping_time = []
         self.move_sent_timestamp = None
         self.use_zipseal = False
@@ -154,17 +164,28 @@ class Session(object):
     def ping(self, for_move=False):
         # don't send another ping if one is already pending
         assert(self.use_timeseal or self.use_zipseal)
-        # Always send a ping with a move in a game being played.
-        # Otherwise, send a ping if one is not alredy pending.
+        if self.ping_dead:
+            return
+        # Send at most one probe ping before the client has proven
+        # itself by ponging: a client that speaks the timeseal/zipseal
+        # handshake but does not filter our ping lines would otherwise
+        # display every ping as visible garbage (one per move in a
+        # game).  Once ponged, ping with every move (as before), or
+        # if none is already pending.
+        if self.ping_probed and not self.ever_ponged:
+            return
         if for_move or not self.ping_sent:
             if self.use_zipseal:
                 self.conn.write(timeseal.ZIPSEAL_PING)
             else:
                 self.conn.write(timeseal.TIMESEAL_1_PING)
             self.ping_sent.append((time.time(), for_move))
+            self.ping_probed = True
 
     def pong(self, t):
         assert(self.ping_sent)
+        self.ping_dead = False
+        self.ever_ponged = True
         sent_time, for_move = self.ping_sent.pop(0)
         reply_time = time.time() - sent_time
 

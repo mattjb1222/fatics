@@ -44,6 +44,12 @@ def heartbeat():
     for u in online.online:
         if u.session.use_zipseal:
             u.session.ping()
+        # if a sent ping goes un-ponged for more than 10 seconds, the
+        # client evidently does not filter our ping lines; stop pinging
+        # it (its next pong, if it ever comes, re-enables pings).
+        if (u.session.ping_sent and
+                time.time() - u.session.ping_sent[0][0] > 10):
+            u.session.ping_dead = True
 
     # forfeit games on time
     for g in list(game.games.values()):
