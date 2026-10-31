@@ -840,10 +840,10 @@ class PlayedGame(Game):
         for o in offers:
             o.decline()
 
-        time = 0.0
+        move_time = 0.0
         # set before the clock block: a crash mid-block must not leave
         # mv.time unset (write_moves would then crash on divmod(None))
-        mv.time = time
+        mv.time = move_time
         # the clock starts immediately (see __init__), so the clock
         # block must run from the very first move
         if self.is_active and self.variant.pos.ply > 0:
@@ -853,16 +853,32 @@ class PlayedGame(Game):
                 # i.e. the previous move was pinged.  A game's first move
                 # has none (the clock starts immediately, so this block
                 # runs from ply 1); fall back to a plain got_move.
+                elapsed_ms = None
                 if (conn.user.has_timeseal() and
-                        conn.session.move_sent_timestamp is not None):
+                        conn.session.move_sent_timestamp is not None and
+                        conn.session.timeseal_last_timestamp is not None):
                     elapsed_ms = (conn.session.timeseal_last_timestamp -
                         conn.session.move_sent_timestamp)
-                    time = self.clock.got_move(moved_side,
+                    # sanity check: the client-side elapsed time cannot
+                    # exceed the server-side elapsed time (plus a margin
+                    # for clock skew and flight time), nor be negative.
+                    # Outside that range the ping/pong bookkeeping is
+                    # stale (a lost ping, a late pong, a bad timestamp);
+                    # fall back to plain server timing so the clock and
+                    # lag are not corrupted by a garbage estimate.
+                    real_ms = (time.time() - self.clock.started_time) * 1000.0
+                    if (elapsed_ms < 0 or
+                            elapsed_ms > real_ms + 5000):
+                        elapsed_ms = None
+                if elapsed_ms is not None:
+                    move_time = self.clock.got_move(moved_side,
                         self.variant.pos.ply, elapsed_ms / 1000.0)
                     mv.lag = int(round(1000.0 * self.clock.real_elapsed -
                         elapsed_ms))
+                    if mv.lag < 0:
+                        mv.lag = 0
                 else:
-                    time = self.clock.got_move(moved_side,
+                    move_time = self.clock.got_move(moved_side,
                         self.variant.pos.ply)
             if self.get_user_to_move().vars['autoflag']:
                 self.clock.check_flag(self, moved_side)
@@ -872,7 +888,7 @@ class PlayedGame(Game):
                 self.clock.start(self.variant.get_turn())
 
         assert(mv == self.variant.pos.get_last_move())
-        mv.time = time
+        mv.time = move_time
 
         p = self.get_user_to_move()
         if p.has_timeseal():

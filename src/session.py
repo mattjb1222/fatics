@@ -174,6 +174,12 @@ class Session(object):
         # if none is already pending.
         if self.ping_probed and not self.ever_ponged:
             return
+        if for_move and self.ping_sent:
+            # a new for-move ping supersedes any pending ping: keep at
+            # most one ping outstanding so a late pong for an old ping
+            # cannot be mis-paired (pop(0) would otherwise apply it to
+            # the stale ping, corrupting move_sent_timestamp)
+            self.ping_sent.pop(0)
         if for_move or not self.ping_sent:
             if self.use_zipseal:
                 self.conn.write(timeseal.ZIPSEAL_PING)
@@ -183,10 +189,21 @@ class Session(object):
             self.ping_probed = True
 
     def pong(self, t):
-        assert(self.ping_sent)
+        # an unsolicited pong (client bug, or a duplicate of an already
+        # answered ping) must not crash the connection (this used to be
+        # an assert); ignore it
+        if not self.ping_sent:
+            return
+        sent_time, for_move = self.ping_sent.pop(0)
+        # a pong that took more than a minute to arrive is stale (the
+        # client stalled or the ping was retransmitted); using its
+        # timestamp would corrupt move_sent_timestamp, so drop it
+        # (the client has still proven itself alive; next ping will
+        # re-probe the move timestamp)
+        if time.time() - sent_time > 60:
+            return
         self.ping_dead = False
         self.ever_ponged = True
-        sent_time, for_move = self.ping_sent.pop(0)
         reply_time = time.time() - sent_time
 
         if len(self.ping_time) > 9:
