@@ -813,10 +813,10 @@ class PlayedGame(Game):
         this for both boards.  Engines that prefer to poll can use
         the 'holding' command instead.  Returns True if the holding
         changed and the line was sent (next_move also refreshes
-        that board's board line then, for clients that read the
-        holding command rather than this one).  Players can hide
-        these lines with 'set bugholding 0' (they remain available
-        via the 'holding' command)."""
+        that board's <b1> holding line then, for clients that read
+        the holding field from board lines rather than this one).
+        Players can hide these lines with 'set bugholding 0' (they
+        remain available via the 'holding' command)."""
         if self.variant.name != 'bughouse':
             return False
         if not self.is_active:
@@ -832,6 +832,33 @@ class PlayedGame(Game):
             wire_log(p, 'holding', line)
             p.write_nowrap(line)
         return True
+
+    def send_b1(self):
+        """ Send this board's <b1> holding line (the holding field
+        that board lines carry) to this board's players and
+        observers, without sending a board (<12>) line.  next_move
+        uses this to refresh the partner board's holding when a
+        capture changes it: clients like Thief build their bughouse
+        drop hand from the <b1> holding field (FICS_ParsePiece ->
+        BOARD_LoadBuffer) and have no 'holding' line handler, so
+        the holding update must reach them; but re-sending the full
+        board block re-delivers the <12> line, whose embedded
+        last-move string makes Thief re-play its check sound on
+        every partner-board move.  The <b1> line alone carries the
+        complete holding and no position, so it updates the hand
+        without re-triggering sounds.  icsdrone/Sunsetter ignore
+        <b1> lines (they use the 'holding' line). """
+        if self.variant.name != 'bughouse':
+            return
+        if not self.is_active:
+            return
+        line = self.variant.get_b1()
+        for p in self.players:
+            wire_log(p, 'b1', line)
+            p.write_nowrap(line)
+        for u in self.observers:
+            wire_log(u, 'b1', line)
+            u.write_nowrap(line)
 
     def next_move(self, mv, conn):
         # decline all offers to the player who just moved
@@ -907,14 +934,22 @@ class PlayedGame(Game):
             self.send_holding_if_changed()
             if self.bug_link is not None:
                 # a capture on this board changed the partner board's
-                # holding; refresh that board's own board line too
-                # (with its updated inline holding) in addition to
-                # the standalone holding line.  This is the partner
-                # board's own line (its own game number), so it
-                # doesn't make single-board clients like Winboard
-                # flip over to a different board.
+                # holding; refresh that board's <b1> holding line
+                # (send_b1) rather than re-sending its board block:
+                # clients like Thief build their bughouse drop hand
+                # from the <b1> holding field (FICS_ParsePiece ->
+                # BOARD_LoadBuffer) and have no 'holding' line
+                # handler, so without the refresh a capture on this
+                # board never reaches the partner board player's
+                # hand until that board next moves.  Re-sending the
+                # full board block instead re-delivers the <12>
+                # line, whose embedded last-move string makes Thief
+                # re-play its check sound on every partner-board
+                # move; the <b1> line alone carries the complete
+                # holding with no position, so it updates the hand
+                # without re-triggering sounds.
                 if self.bug_link.send_holding_if_changed():
-                    self.bug_link.send_boards()
+                    self.bug_link.send_b1()
             # bughouse is a special case because a checkmate or stalemate
             # on one board doesn't necessariy end the games
             if self.variant.pos.is_checkmate:

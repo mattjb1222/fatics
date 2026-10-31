@@ -1317,4 +1317,93 @@ class TestBughouseRules(Test):
         self.close(t3)
         self.close(t4)
 
+    def test_bughouse_b1_only_on_partner_capture(self):
+        # a capture on the partner board must refresh the other
+        # board's <b1> holding line without re-sending that board's
+        # <12> line: re-sending the board block re-delivers the
+        # <12> line, whose embedded last-move string makes clients
+        # like Thief re-play their check sound on every
+        # partner-board move, while the <b1> line alone carries
+        # the complete holding (their drop hand) with no position
+        t = self.connect_as_guest('GuestABCD')
+        t2 = self.connect_as_guest('GuestEFGH')
+        t3 = self.connect_as_guest('GuestIJKL')
+        t4 = self.connect_as_guest('GuestMNOP')
+
+        t.write('set style 12\n')
+        t2.write('set style 12\n')
+        t3.write('set style 12\n')
+        t4.write('set style 12\n')
+
+        t2.write('set bugopen\n')
+        self.expect('You are now open for bughouse.', t2)
+        t.write('part guestefgh\n')
+        self.expect('GuestABCD offers', t2)
+        t2.write('part guestabcd\n')
+        self.expect('GuestEFGH accepts', t)
+
+        t4.write('set bugopen\n')
+        self.expect('You are now open for bughouse.', t4)
+        t3.write('part guestmnop\n')
+        self.expect('GuestIJKL offers', t4)
+        t4.write('a\n')
+        self.expect('GuestMNOP accepts', t3)
+
+        t.write('match GuestIJKL bughouse white 1000+0\n')
+        self.expect('Issuing:', t)
+        self.expect('Challenge:', t3)
+        t3.write('accept\n')
+        self.expect('<12> ', t)
+        self.expect('<12> ', t2)
+        self.expect('<12> ', t3)
+        self.expect('<12> ', t4)
+
+        # drain the stale partner-board style-12 lines (partners
+        # auto-follow each other, so each connection receives two
+        # initial board lines)
+        for c in (t, t2, t3, t4):
+            c.read_until('zz-not-there', 0.3)
+
+        # game 2 (t4 white vs t2 black) reaches a capture (exd4),
+        # which adds a white pawn to game 1's holding
+        t4.write('e4\n')
+        self.expect('<12> ', t2)
+        self.expect('<12> ', t4)
+        t2.write('e5\n')
+        self.expect('<12> ', t2)
+        self.expect('<12> ', t4)
+        t4.write('Bc4\n')
+        self.expect('<12> ', t2)
+        self.expect('<12> ', t4)
+        t2.write('Nf6\n')
+        self.expect('<12> ', t2)
+        self.expect('<12> ', t4)
+        t4.write('d4\n')
+        self.expect('<12> ', t2)
+        self.expect('<12> ', t4)
+
+        t2.write('exd4\n')
+        # game 2's own line still goes out on its own move
+        self.expect('<12> ', t2)
+        # game 1's holding refresh: a <b1> line for game 1 reaches
+        # game 1's players with the updated holding
+        self.expect('<b1> game 1 white [P] black []', t)
+        # ... and no game-1 <12> line is re-sent (any <12> arriving
+        # after that point is game 2's; a game-1 <12> would mean
+        # the holding refresh re-sent the board block)
+        ret = t.read_until('zz-not-there', 0.3)
+        for line in ret.split('\n'):
+            if line.startswith('<12>'):
+                toks = line.split(' ')
+                # layout: <12> <8 board rank tokens> side ep <4 castling>
+                # fifty <game number> <white name> ...
+                self.assertTrue(len(toks) > 17, repr(line))
+                self.assertNotEqual(toks[16], '1',
+                    'game-1 <12> line re-sent on holding refresh: %r' % line)
+
+        self.close(t)
+        self.close(t2)
+        self.close(t3)
+        self.close(t4)
+
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent
