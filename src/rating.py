@@ -21,6 +21,7 @@ import speed_variant
 import datetime
 
 from db import db
+from online import online
 
 INITIAL_RATING = 1720
 INITIAL_RD = 350
@@ -133,6 +134,19 @@ def update_ratings(game, white_score, black_score):
     game.black.set_rating(game.speed_variant,
         black_rating, black_rd, bp.vol,
         black_win, black_loss, black_draw, ltime)
+
+    # tell bin listeners (clients such as Ninja show the bughouse rating
+    # beside the player name in their watch sections; the change happens
+    # here, synchronously, at game end)
+    sv = game.speed_variant
+    if online.bin_var:
+        for u in online.bin_var:
+            u.write_nowrap('\n%s\'s %s %s rating is now %d.\n' % (
+                game.white.name, sv.speed.name, sv.variant.name,
+                int(white_rating)))
+            u.write_nowrap('\n%s\'s %s %s rating is now %d.\n' % (
+                game.black.name, sv.speed.name, sv.variant.name,
+                int(black_rating)))
 
 def show_ratings(user, conn):
     rows = db.user_get_ratings(user.id)
