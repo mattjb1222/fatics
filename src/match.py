@@ -606,6 +606,25 @@ class Challenge(Offer, MatchStringParser):
             # Thief) observe it themselves.
             g.update_gameinfo()
             g2.update_gameinfo()
+            # link pre-existing observers of each board to the partner board:
+            # their observe() ran in start() (inside __init__), i.e. before
+            # bug_link existed, so the automatic partner link was skipped.
+            # observe() is idempotent; it sends the board snapshot and the
+            # post-link gameinfo, so observers (e.g. followers) see the
+            # partner board immediately without issuing 'observe <num>'.
+            for u in list(g.observers):
+                g2.observe(u)
+            for u in list(g2.observers):
+                g.observe(u)
+            # the post-link gameinfo (m=2 n= pt=N) was only sent to the
+            # players by update_gameinfo(); the start-time gameinfo the
+            # observers received predates the link (pt=0) -- resend it.
+            for u in list(g.observers):
+                if u.session.ivars['gameinfo']:
+                    u.write_nowrap(g.gameinfo_str)
+            for u in list(g2.observers):
+                if u.session.ivars['gameinfo']:
+                    u.write_nowrap(g2.gameinfo_str)
             # tell each player which game their partner is playing in;
             # clients such as Thief use it to auto-observe the partner
             # board ('Your partner is playing game %d' triggers Thief's
