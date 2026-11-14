@@ -18,8 +18,16 @@
 #
 
 from offer import Offer
+from online import online
 
 partners = []
+
+def _bin_write(text):
+    # partnership news for users with the bin variable set (clients such
+    # as Ninja drive their 'partnerships' watch sections from these)
+    for u in online.bin_var:
+        u.write_nowrap('\n' + text)
+
 
 class Partner(Offer):
     def __init__(self, a, b):
@@ -54,6 +62,7 @@ class Partner(Offer):
         self.a.session.partner = self.b
         self.b.session.partner = self.a
         partners.append(set([self.a, self.b]))
+        _bin_write('%s and %s are now bughouse partners.\n' % (self.a.name, self.b.name))
 
         # end any pending partnership offers
         for offer in self.a.session.offers_sent[:]:
@@ -92,5 +101,6 @@ def end_partnership(p1, p2):
     p2.session.partner = None
     p1.write_('You no longer have a bughouse partner.\n')
     p2.write_('You no longer have a bughouse partner.\n')
+    _bin_write('%s and %s are no longer bughouse partners.\n' % (p1.name, p2.name))
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent

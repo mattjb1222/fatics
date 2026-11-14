@@ -65,6 +65,22 @@ def _set_gin_var(user, val):
         if user in online.online.gin_var:
             online.online.gin_var.remove(user)
 
+def _set_bin_var(user, val):
+    """ Called when the bin var is set. """
+    if val:
+        online.online.bin_var.add(user)
+    else:
+        if user in online.online.bin_var:
+            online.online.bin_var.remove(user)
+
+def _set_bugopen_var(user, val):
+    """ Called when the bugopen var is set -- tell bin listeners, which
+    need the 'unpartnered players open for bughouse' list to be live. """
+    if user in online.online.bin_var:
+        for u in online.online.bin_var:
+            u.write_nowrap(('%s is now open for bughouse.\n' if val
+                          else '%s is no longer open for bughouse.\n') % user.name)
+
 class Var(object):
     """This class represents the form of a variable but does not hold
     a specific value.  For example, the server has one global instance of
@@ -287,7 +303,7 @@ class VarList(object):
         BoolVar("chanoff", False, N_("You will not hear channel tells.\n"), N_("You will now hear channel tells.\n")).persist().add_as_var()
 
         BoolVar("open", True, N_("You are now open to receive match requests.\n"), N_("You are no longer open to receive match requests.\n")).persist().add_as_var()
-        BoolVar("bugopen", False, N_("You are now open for bughouse.\n"), N_("You are not open for bughouse.\n")).persist().add_as_var()
+        BoolVar("bugopen", False, N_("You are now open for bughouse.\n"), N_("You are not open for bughouse.\n")).persist().add_as_var().set_hook(_set_bugopen_var)
         BoolVar("silence", False, N_("You will now play games in silence.\n"), N_("You will not play games in silence.\n")).persist().add_as_var()
         BoolVar("bell", True, N_("You will now hear beeps.\n"), N_("You will not hear beeps.\n")).persist().add_as_var()
         BoolVar("autoflag", True, N_("Auto-flagging enabled.\n"), N_("Auto-flagging disabled.\n")).persist().add_as_var()
@@ -303,6 +319,7 @@ class VarList(object):
         BoolVar("showownseek", False, N_("You will now see your own seeks.\n"), N_("You will not see your own seeks.\n")).persist().add_as_var()
         BoolVar("pin", False, N_("You will now hear logins/logouts.\n"), N_("You will not hear logins/logouts.\n")).persist().add_as_var().set_hook(_set_pin_var)
         BoolVar("gin", False, N_("You will now hear game results.\n"), N_("You will not hear game results.\n")).persist().add_as_var().set_hook(_set_gin_var)
+        BoolVar("bin", False, N_("You will now hear bughouse partnership news.\n"), N_("You will not hear bughouse partnership news.\n")).persist().add_as_var().set_hook(_set_bin_var)
         # TODO: highlight
 
         # not persistent

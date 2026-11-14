@@ -32,6 +32,7 @@ class Online(object):
         self.pin_ivar = set()
         self.pin_var = set()
         self.gin_var = set()
+        self.bin_var = set()
         #self.shouts_var = set()
 
     def add(self, u):
@@ -41,6 +42,8 @@ class Online(object):
             self.pin_var.add(u)
         if u.vars['gin']:
             self.gin_var.add(u)
+        if u.vars['bin']:
+            self.bin_var.add(u)
         if u.is_guest:
             self.guest_count += 1
 
@@ -51,6 +54,8 @@ class Online(object):
             self.pin_var.remove(u)
         if u in self.gin_var:
             self.gin_var.remove(u)
+        if u in self.bin_var:
+            self.bin_var.remove(u)
         # only remove this object's entry; if a *new* object with the
         # same name (a re-login) already replaced it, leave that in
         if self.online_names.get(u.name.lower()) is not u:
