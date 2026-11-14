@@ -49,6 +49,7 @@ CREATE TABLE `user` (
   `bugopen` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'open for bughouse',
   `ctell` BOOLEAN NOT NULL DEFAULT 1 COMMENT 'show channel tells from guests',
   `gin` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'notify when games start and end',
+  `bin` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'bughouse partnership news',
   `height` SMALLINT(4) NOT NULL DEFAULT 24 COMMENT 'terminal height in characters',
   `mailmess` BOOLEAN NOT NULL DEFAULT 0 COMMENT 'email a copy of messages',
   `seek` BOOLEAN NOT NULL DEFAULT 1 COMMENT 'show seeks',
