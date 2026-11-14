@@ -605,9 +605,14 @@ class PlayedGame(Game):
                     self.black_rating, self.rated_str, self.game_type_str(),
                     self.white_time, self.inc, self.number))
 
-        # notify users with the gin variable set
+        # notify users with the gin variable set (game-start
+        # notification; create_str_2 is a local of __init__ -- using it
+        # here raised NameError and aborted start() for anyone with gin on)
         for u in online.gin_var:
-            u.write_nowrap(create_str_2)
+            u.write_nowrap('\nGame notification: %s (%s) vs. %s (%s) %s %s %d %d: Game %d\n' % (
+                self.white_name, self.white_rating, self.black_name,
+                self.black_rating, self.rated_str, self.game_type_str(),
+                self.white_time, self.inc, self.number))
 
         p = self.get_user_to_move()
         if p.has_timeseal():
