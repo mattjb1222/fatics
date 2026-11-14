@@ -76,7 +76,7 @@ def _set_bin_var(user, val):
 def _set_bugopen_var(user, val):
     """ Called when the bugopen var is set -- tell bin listeners, which
     need the 'unpartnered players open for bughouse' list to be live. """
-    if user in online.online.bin_var:
+    if online.online.bin_var:
         for u in online.online.bin_var:
             u.write_nowrap(('%s is now open for bughouse.\n' if val
                           else '%s is no longer open for bughouse.\n') % user.name)
