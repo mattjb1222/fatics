@@ -95,14 +95,28 @@ class Bugwho(Command):
                     pair.append(pboard)
                     seen.add(pboard.number)
                 seen.add(g.number)
-                for b in pair:
+                for i, b in enumerate(pair):
                     # 'game N' prefix: FICS's bugwho carries game numbers
                     # (Thief's parser expects them); name-only output
-                    # leaves clients no way to 'observe <num>' from here
-                    conn.write('game %d %s (%s) / %s (%s)  [ %s %s %s ]\n' % (
+                    # leaves clients no way to 'observe <num>' from here.
+                    # The pair's second board (the partner board) is
+                    # tagged '(pb)' — clients show one entry per game.
+                    # The main board line carries the partners' names so
+                    # clients can display the full A + B / C + D layout
+                    # (and rebuild partnership state for mid-game joins).
+                    extra = ''
+                    if i == 0:
+                        pw = getattr(getattr(b.white, 'session', None),
+                            'partner', None)
+                        pb = getattr(getattr(b.black, 'session', None),
+                            'partner', None)
+                        if pw is not None and pb is not None:
+                            extra = ' (pw %s pb %s)' % (pw.name, pb.name)
+                    conn.write('game %d %s (%s) / %s (%s)  [ %s %s %s ]%s%s\n' % (
                         b.number, b.white_name, b.white_rating,
                         b.black_name, b.black_rating,
-                        b.white_time, b.inc, b.rated_str))
+                        b.white_time, b.inc, b.rated_str,
+                        extra, '' if i == 0 else ' (pb)'))
                 conn.write('\n')
                 count += 1
             conn.write(ngettext(' %d game displayed.\n',
