@@ -96,8 +96,11 @@ class Bugwho(Command):
                     seen.add(pboard.number)
                 seen.add(g.number)
                 for b in pair:
-                    conn.write('%s (%s) / %s (%s)  [ %s %s %s ]\n' % (
-                        b.white_name, b.white_rating,
+                    # 'game N' prefix: FICS's bugwho carries game numbers
+                    # (Thief's parser expects them); name-only output
+                    # leaves clients no way to 'observe <num>' from here
+                    conn.write('game %d %s (%s) / %s (%s)  [ %s %s %s ]\n' % (
+                        b.number, b.white_name, b.white_rating,
                         b.black_name, b.black_rating,
                         b.white_time, b.inc, b.rated_str))
                 conn.write('\n')
