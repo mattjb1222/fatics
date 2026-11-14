@@ -44,6 +44,12 @@ class Online(object):
             self.gin_var.add(u)
         if u.vars['bin']:
             self.bin_var.add(u)
+        # a logged-in user with bugopen persisted on (registered users)
+        # becomes open again — tell bin listeners.  (Guests' vars are
+        # not persisted, so they always start off.)
+        if u.vars['bugopen']:
+            for v in self.bin_var:
+                v.write_nowrap('\n%s is now open for bughouse.\n' % u.name)
         if u.is_guest:
             self.guest_count += 1
 
@@ -56,6 +62,14 @@ class Online(object):
             self.gin_var.remove(u)
         if u in self.bin_var:
             self.bin_var.remove(u)
+        # a departed user's bugopen state goes away with the session
+        # (guest vars aren't persisted at all) — tell bin listeners so
+        # their watch sections don't keep stale 'open' entries.  (The
+        # partnership end is broadcast separately by end_partnership,
+        # which session teardown calls on disconnect.)
+        if u.vars['bugopen']:
+            for v in self.bin_var:
+                v.write_nowrap('\n%s is no longer open for bughouse.\n' % u.name)
         # only remove this object's entry; if a *new* object with the
         # same name (a re-login) already replaced it, leave that in
         if self.online_names.get(u.name.lower()) is not u:
