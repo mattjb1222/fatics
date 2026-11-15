@@ -225,10 +225,16 @@ class Game(object):
             out = self.variant.to_style1(u)
         wire_log(u, 'board', out)
         # write each line as its own message (combined with TCP_NODELAY in telnet.py)
-        # so clients that only parse discrete <12>/<b1> lines reliably receive the holding lines
+        # so clients that only parse discrete <12>/<b1> lines reliably receive the holding lines.
+        # The output's LEADING separator must be preserved: to_style12/to_style1 start
+        # with '\n', and dropping it (split + skip-empty) glues the first line onto a
+        # pending 'fics% ' prompt (style-12 boards are line-prefixed, not line-terminated,
+        # by this split), which broke any client that requires lines to start with <12>.
+        first = True
         for line in out.split('\n'):
             if line:
-                u.write_nowrap(line + '\n')
+                u.write_nowrap(('\n' if first else '') + line + '\n')
+                first = False
 
     def __eq__(self, other):
         return self.number == other.number
