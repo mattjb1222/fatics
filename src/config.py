@@ -39,7 +39,7 @@ class Config(object):
     admin_reserve = 5
 
     # maximum number of guests
-    maxguest = 10
+    maxguest = 25
 
     # limit on number of channels one user can own
     max_channels_owned = 8
