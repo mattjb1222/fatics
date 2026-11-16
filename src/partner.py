@@ -102,5 +102,13 @@ def end_partnership(p1, p2):
     p1.write_('You no longer have a bughouse partner.\n')
     p2.write_('You no longer have a bughouse partner.\n')
     _bin_write('%s and %s are no longer bughouse partners.\n' % (p1.name, p2.name))
+    # a freed player whose bugopen was superseded by the partnership
+    # re-appears in the 'unpartnered players open for bughouse' list —
+    # re-broadcast their bugopen state (the bugopen var itself did not
+    # change, so its hook never fired)
+    for u in (p1, p2):
+        if u.vars['bugopen']:
+            for v in online.bin_var:
+                v.write_nowrap('\n%s is now open for bughouse.\n' % u.name)
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent
