@@ -143,6 +143,25 @@ class Games(Command):
         count = 0
         for g in list(game.games.values()):
             count += 1
+            # one row per game (FICS-compatible format; clients parse
+            # '  N) white (r) vs. black (r)  rated  type  time inc'):
+            # name / variant / rated / time / inc via getattr defaults
+            # because examined games miss some PlayedGame attributes
+            type_str = getattr(g, 'game_type_str', None)
+            type_str = type_str() if callable(type_str) else (
+                getattr(g, 'variant', None) and getattr(g.variant, 'name', None)
+                or 'unknown')
+            conn.write('  %2d) %s (%s) vs. %s (%s)  %s  %s  %d %s%s\n' % (
+                g.number,
+                getattr(g, 'white_name', '?'),
+                getattr(g, 'white_rating', '???'),
+                getattr(g, 'black_name', '?'),
+                getattr(g, 'black_rating', '???'),
+                getattr(g, 'rated_str', 'unrated'),
+                type_str,
+                getattr(g, 'white_time', 0),
+                getattr(g, 'inc', 0),
+                '' if getattr(g, 'gtype', None) != game.EXAMINED else ' (examined)'))
         conn.write(ngettext('  %(count)d game displayed (of %(total)3d in progress).\n', '  %(count)d games displayed (of %(total)d in progress).\n', count) % {'count': count, 'total': len(game.games)})
 
 @ics_command('limits', '')
