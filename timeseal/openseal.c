@@ -24,13 +24,14 @@
 #include <string.h>
 #include <sys/select.h>
 #include <netinet/in.h>
+#include <unistd.h>
 #define BSIZE 1024
 
 char *key="Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
 //char hello[100]="TIMESTAMP|javaboard|Blackdown Java-Linux Team 1.3.1 Linux|";
 char hello[100]="TIMESTAMP|openseal|Running on an operating system|";
 
-int crypt(char *s,int l)
+int sealenc(char *s,int l)
 {
 	int n;
 	struct timeval tv;
@@ -90,7 +91,7 @@ void sendtofics(int fd, char *buff, int *rd)
 			char ffub[BSIZE+20];
 			int k;
 			memcpy(ffub,buff,c);
-			k=crypt(ffub,c);
+			k=sealenc(ffub,c);
 			mywrite(fd,ffub,k);
 			for(c++,k=0;c<*rd;c++,k++)
 				buff[k]=buff[c];
@@ -108,7 +109,7 @@ void getfromfics(int fd, char *buff, int *rd)
 			if(*rd<5) break;
 			else {
 				char reply[20]="\x2""9";
-				n = crypt(reply,2);
+				n = sealenc(reply,2);
 				mywrite(fd, reply, n);
 				for(n = 5; n < *rd; n++)
 					buff[n-5] = buff[n];
@@ -139,7 +140,32 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	fd=makeconn(hostname,port);
-	n=crypt(hello,strlen(hello));
+	/* Wait for the server's "login:" prompt before sending the timeseal
+	 * handshake: FatICS drops lines that arrive before its connectionMade
+	 * handler runs (state 'prelogin'), which would skip the timeseal
+	 * detection (check_for_timeseal fires on the first login-state line). */
+	{
+		char waitbuf[256];
+		int i = 0, tries = 0;
+		while (i < (int)sizeof(waitbuf) && tries < 10) {
+			fd_set fds;
+			struct timeval tv;
+			FD_ZERO(&fds); FD_SET(fd, &fds);
+			tv.tv_sec = 1; tv.tv_usec = 0;
+			if (select(fd + 1, &fds, NULL, NULL, &tv) > 0 && FD_ISSET(fd, &fds)) {
+				int n2 = read(fd, waitbuf + i, sizeof(waitbuf) - i);
+				if (n2 <= 0) break;
+				i += n2;
+				tries = 0;            /* progress: keep trying */
+			} else {
+				tries++;
+			}
+			if (strstr(waitbuf, "login:")) break;
+		}
+		/* pass the banner through so the client still sees it */
+		if (i > 0) mywrite(1, waitbuf, i);
+	}
+	n=sealenc(hello,strlen(hello));
 	mywrite(fd,hello,n);
 	for(;;) {
 		fd_set fds;
