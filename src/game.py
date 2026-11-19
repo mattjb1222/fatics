@@ -913,6 +913,9 @@ class PlayedGame(Game):
                         self.variant.pos.ply, elapsed_ms / 1000.0)
                     mv.lag = int(round(1000.0 * self.clock.real_elapsed -
                         elapsed_ms))
+                    print('timeseal: move %s lag estimate %sms '
+                        '(client thinking %sms)'
+                        % (mv.to_san(), mv.lag, int(round(elapsed_ms))))
                     if mv.lag < 0:
                         mv.lag = 0
                 else:

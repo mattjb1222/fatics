@@ -212,5 +212,6 @@ class Session(object):
 
         if for_move:
             self.move_sent_timestamp = t
+        print('timeseal: pong received (for_move=%s, rtt %dms)' % (for_move, int(reply_time * 1000)))
 
 # vim: expandtab tabstop=4 softtabstop=4 shiftwidth=4 smarttab autoindent
