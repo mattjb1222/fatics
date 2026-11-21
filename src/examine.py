@@ -24,6 +24,7 @@ import clock
 
 from game import Game
 from game_constants import *
+from variant.base_variant import IllegalMoveError
 
 class ExaminedGame(Game):
     def __init__(self, user, hist_game=None):
@@ -137,7 +138,6 @@ class ExaminedGame(Game):
         return (int(round(white_clock)), int(round(black_clock)))
 
     def forward(self, n, conn):
-        assert(self.variant.pos.ply <= len(self.moves))
         if self.variant.pos.ply >= len(self.moves):
             conn.write(_("You're at the end of the game.\n"))
             return
@@ -146,11 +146,24 @@ class ExaminedGame(Game):
                 'Game %d: %s goes forward %d moves.\n', n,
                 (self.number, conn.user.name, n))
         for i in range(0, n):
+            if self.variant.pos.ply >= len(self.moves):
+                # end of the game
+                break
             san = self.moves[self.variant.pos.ply]
-            mv = self.variant.parse_move(san, conn)
+            try:
+                mv = self.variant.parse_move(san, conn)
+            except IllegalMoveError:
+                mv = None
             if not mv:
-                print('internal error: failed to parse move %s' % san)
-            assert(mv)
+                # a recorded move that can't be replayed (the exam
+                # position diverged from the movetext, e.g. after the
+                # examiner played scratch moves) -- stop the batch,
+                # keep the session alive, resync the clients
+                import traceback
+                traceback.print_exc()
+                conn.write(_("Can't go forward: the recorded move %(mv)s can't be replayed.\n") % {'mv': san})
+                self.send_boards()
+                return
             mv.time = self._get_move_time(self.variant.pos.ply)
             # carry the recorded per-move time in the lag field too, so
             # clients that show the move's time from the lag (rather than
@@ -158,16 +171,14 @@ class ExaminedGame(Game):
             # increment) display the true time spent on the move
             mv.lag = int(round(mv.time))
             self.variant.do_move(mv)
-            if self.variant.pos.ply >= len(self.moves):
-                # end of the game
-                break
         self.send_boards()
         #self._check_result()
         # Trust the stored result, rather than using mates we detected,
         # ourselves, since we can't compute things like resignation and
-        # agreed draws.
-        if self.variant.pos.ply >= len(self.moves):
-            assert(self.result_code)
+        # agreed draws.  Scratch exams have no stored result -- the
+        # assert below used to abort the whole command (internal error)
+        # when 'forward' reached the end of the examiner's own moves.
+        if self.variant.pos.ply >= len(self.moves) and self.result_code:
             self.result(self._result_msg(self.result_reason, self.result_code),
                 self.result_code)
 
@@ -237,8 +248,13 @@ class ExaminedGame(Game):
             p.nwrite_('Game %d: %s backs up %d move.\n',
                 'Game %d: %s backs up %d moves.\n', n,
                 (self.number, conn.user.name, n))
-        for i in range(0, n):
-            self.variant.undo_move()
+        try:
+            for i in range(0, n):
+                self.variant.undo_move()
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            conn.write(_("Can't go back: the position can't be undone.\n"))
         self.send_boards()
 
     def _check_result(self):
