@@ -268,6 +268,15 @@ class ExaminedGame(Game):
         elif self.variant.pos.is_draw_nomaterial:
             self.result('Neither player has mating material', '1/2-1/2')
 
+    def leave(self, user):
+        # An examined game is closed, not played out: no result, no
+        # broadcast, no history save (the examined game's record must
+        # stay untouched -- the base Game.leave path would forfeit/
+        # adjourn it and INSERT a duplicate/adjourned history row).
+        self.clock.stop()
+        self.is_active = False
+        self.free()
+
     def mexamine(self, u, conn):
         # GuestWYMW has made you an examiner of game 81.
         # GuestMWVC is now an examiner of game 81.

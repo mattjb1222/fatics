@@ -135,13 +135,16 @@ class Alias(Command):
 @ics_command('games', 'o', admin.Level.user)
 class Games(Command):
     def run(self, args, conn):
-        if not list(game.games.values()):
+        # examined games are sessions, not games in progress
+        games = [g for g in game.games.values()
+            if getattr(g, 'gtype', None) != game.EXAMINED]
+        if not games:
             conn.write(_('There are no games in progress.\n'))
             return
         if args[0] is not None:
             conn.write('TODO: games PARAM\n')
         count = 0
-        for g in list(game.games.values()):
+        for g in games:
             count += 1
             # one row per game (FICS-compatible format; clients parse
             # '  N) white (r) vs. black (r)  rated  type  time inc'):
@@ -160,9 +163,8 @@ class Games(Command):
                 getattr(g, 'rated_str', 'unrated'),
                 type_str,
                 getattr(g, 'white_time', 0),
-                getattr(g, 'inc', 0),
-                '' if getattr(g, 'gtype', None) != game.EXAMINED else ' (examined)'))
-        conn.write(ngettext('  %(count)d game displayed (of %(total)3d in progress).\n', '  %(count)d games displayed (of %(total)d in progress).\n', count) % {'count': count, 'total': len(game.games)})
+                getattr(g, 'inc', 0)))
+        conn.write(ngettext('  %(count)d game displayed (of %(total)3d in progress).\n', '  %(count)d games displayed (of %(total)d in progress).\n', count) % {'count': count, 'total': len(games)})
 
 @ics_command('limits', '')
 class Limits(Command):

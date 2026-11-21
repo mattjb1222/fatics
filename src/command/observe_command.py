@@ -185,14 +185,18 @@ class Allobservers(Command):
                         % g.number)
         else:
             for g in game.games.values():
+                if getattr(g, 'gtype', None) == game.EXAMINED:
+                    continue    # examined sessions are not in progress
                 if g.allobservers(conn):
                     count += 1
 
         if count > 0:
+            total = len([g for g in game.games.values()
+                if getattr(g, 'gtype', None) != game.EXAMINED])
             conn.write(ngettext(
                 '  %(count)d game displayed (of %(total)d in progress).\n',
                 '  %(count)d games displayed (of %(total)d in progress).\n',
-                    count) % {'count': count, 'total': len(game.games)})
+                    count) % {'count': count, 'total': total})
 
 @ics_command('unobserve', 'n')
 class Unobserve(Command):

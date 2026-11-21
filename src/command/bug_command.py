@@ -83,7 +83,8 @@ class Bugwho(Command):
             count = 0
             seen = set()
             boards = [g for g in list(game.games.values())
-                if getattr(g, 'variant', None) is not None
+                if getattr(g, 'gtype', None) != game.EXAMINED
+                and getattr(g, 'variant', None) is not None
                 and g.variant.name == 'bughouse']
             for g in boards:
                 if g.number in seen:
