@@ -154,7 +154,7 @@ class Games(Command):
             type_str = type_str() if callable(type_str) else (
                 getattr(g, 'variant', None) and getattr(g.variant, 'name', None)
                 or 'unknown')
-            conn.write('  %2d) %s (%s) vs. %s (%s)  %s  %s  %d %s%s\n' % (
+            conn.write('  %2d) %s (%s) vs. %s (%s)  %s  %s  %d %s\n' % (
                 g.number,
                 getattr(g, 'white_name', '?'),
                 getattr(g, 'white_rating', '???'),
